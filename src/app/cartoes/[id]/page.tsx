@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { formatCurrency } from "@/lib/format";
+import { CATEGORIAS_DESPESA } from "@/lib/categorias";
 import Link from "next/link";
 
 type CartaoDetail = {
@@ -217,12 +218,17 @@ export default function CartaoDetailPage() {
             </div>
             <div>
               <label className="block text-sm text-slate-600">Categoria</label>
-              <input
-                type="text"
-                value={form.categoria}
+              <select
+                value={CATEGORIAS_DESPESA.includes(form.categoria as never) ? form.categoria : "Outros"}
                 onChange={(e) => setForm({ ...form, categoria: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-              />
+              >
+                {CATEGORIAS_DESPESA.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm text-slate-600">Data da compra</label>

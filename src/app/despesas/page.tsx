@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { formatCurrency } from "@/lib/format";
+import { CATEGORIAS_DESPESA } from "@/lib/categorias";
 import Link from "next/link";
 import { TrendingDown, ArrowLeft, Repeat } from "lucide-react";
 
@@ -34,7 +35,7 @@ export default function DespesasPage() {
   const [form, setForm] = useState({
     descricao: "",
     valor: "",
-    categoria: "",
+    categoria: "Outros" as string,
     data: new Date().toISOString().slice(0, 10),
     formaPagamento: "PIX" as "PIX" | "DINHEIRO" | "CARTAO",
     contexto: "PESSOAL" as "PESSOAL" | "ARCADE",
@@ -98,7 +99,7 @@ export default function DespesasPage() {
         return res.json();
       })
       .then(() => {
-        setForm({ ...form, descricao: "", valor: "", categoria: "" });
+        setForm({ ...form, descricao: "", valor: "", categoria: "Outros" });
         loadList();
       })
       .catch((err) => setError(err.message ?? "Erro ao salvar"))
@@ -179,13 +180,18 @@ export default function DespesasPage() {
             </div>
             <div>
               <label className="block text-sm text-slate-600">Categoria *</label>
-              <input
-                type="text"
+              <select
                 value={form.categoria}
                 onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-                placeholder="Ex: Alimentação, Transporte"
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-              />
+                required
+              >
+                {CATEGORIAS_DESPESA.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm text-slate-600">Data *</label>
