@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getCicloFatura } from "@/lib/cartao";
-import type { Contexto } from "@prisma/client";
 import { startOfMonth, endOfMonth, subMonths, differenceInDays, lastDayOfMonth } from "date-fns";
+import { PESSOAL_ID } from "@/lib/contexto";
 
 /**
- * Resumo do dashboard: saldo pessoal, lucro Arcade, projeções e status.
+ * Resumo do dashboard: saldo pessoal, lucro empresas (não pessoal), projeções e status.
  * Todos os valores consideram o contexto selecionado e o mês atual.
  */
 export async function GET(request: Request) {
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const contexto = (searchParams.get("contexto") ?? "PESSOAL") as Contexto;
+  const contexto = searchParams.get("contexto") ?? PESSOAL_ID;
 
   const now = new Date();
   const inicioMes = startOfMonth(now);
@@ -25,22 +25,22 @@ export async function GET(request: Request) {
   const diaAtual = now.getDate();
 
   try {
-    // Receitas e despesas do mês por contexto
+    // Receitas e despesas do mês: PESSOAL vs demais contextos (empresas)
     const [receitasPessoal, despesasPessoal, receitasArcade, despesasArcade] = await Promise.all([
       prisma.receita.aggregate({
-        where: { userId: user.id, contexto: "PESSOAL", data: { gte: inicioMes, lte: fimMes } },
+        where: { userId: user.id, contexto: PESSOAL_ID, data: { gte: inicioMes, lte: fimMes } },
         _sum: { valor: true },
       }),
       prisma.despesa.aggregate({
-        where: { userId: user.id, contexto: "PESSOAL", data: { gte: inicioMes, lte: fimMes } },
+        where: { userId: user.id, contexto: PESSOAL_ID, data: { gte: inicioMes, lte: fimMes } },
         _sum: { valor: true },
       }),
       prisma.receita.aggregate({
-        where: { userId: user.id, contexto: "ARCADE", data: { gte: inicioMes, lte: fimMes } },
+        where: { userId: user.id, contexto: { not: PESSOAL_ID }, data: { gte: inicioMes, lte: fimMes } },
         _sum: { valor: true },
       }),
       prisma.despesa.aggregate({
-        where: { userId: user.id, contexto: "ARCADE", data: { gte: inicioMes, lte: fimMes } },
+        where: { userId: user.id, contexto: { not: PESSOAL_ID }, data: { gte: inicioMes, lte: fimMes } },
         _sum: { valor: true },
       }),
     ]);
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
     const arcadeMesAnterior = await prisma.receita.aggregate({
       where: {
         userId: user.id,
-        contexto: "ARCADE",
+        contexto: { not: PESSOAL_ID },
         data: { gte: inicioMesAnterior, lte: fimMesAnterior },
       },
       _sum: { valor: true },
@@ -69,7 +69,7 @@ export async function GET(request: Request) {
     const despesasArcadeAnterior = await prisma.despesa.aggregate({
       where: {
         userId: user.id,
-        contexto: "ARCADE",
+        contexto: { not: PESSOAL_ID },
         data: { gte: inicioMesAnterior, lte: fimMesAnterior },
       },
       _sum: { valor: true },
@@ -109,11 +109,11 @@ export async function GET(request: Request) {
     // Dados para gráficos: receitas e despesas por dia (mês atual PESSOAL)
     const [receitasList, despesasList] = await Promise.all([
       prisma.receita.findMany({
-        where: { userId: user.id, contexto: "PESSOAL", data: { gte: inicioMes, lte: fimMes } },
+        where: { userId: user.id, contexto: PESSOAL_ID, data: { gte: inicioMes, lte: fimMes } },
         select: { data: true, valor: true },
       }),
       prisma.despesa.findMany({
-        where: { userId: user.id, contexto: "PESSOAL", data: { gte: inicioMes, lte: fimMes } },
+        where: { userId: user.id, contexto: PESSOAL_ID, data: { gte: inicioMes, lte: fimMes } },
         select: { data: true, valor: true, categoria: true },
       }),
     ]);

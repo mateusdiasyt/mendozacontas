@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import Link from "next/link";
 import { CreditCard, ArrowLeft } from "lucide-react";
 import { CreditCardVisual, type LayoutCartao } from "@/components/ui/CreditCardVisual";
+import { buildContextoOptions, PESSOAL_ID } from "@/lib/contexto";
 
 type CartaoItem = {
   id: string;
@@ -20,6 +21,9 @@ type CartaoItem = {
 export default function CartoesPage() {
   const [token, setToken] = useState<string | null>(null);
   const [list, setList] = useState<CartaoItem[]>([]);
+  const [contextoOptions, setContextoOptions] = useState<{ value: string; label: string }[]>([
+    { value: PESSOAL_ID, label: "Pessoal" },
+  ]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -29,7 +33,7 @@ export default function CartoesPage() {
     fechamento: "10",
     vencimento: "15",
     layout: "GENERICO" as LayoutCartao,
-    contexto: "PESSOAL" as "PESSOAL" | "ARCADE",
+    contexto: PESSOAL_ID,
   });
 
   useEffect(() => {
@@ -41,9 +45,20 @@ export default function CartoesPage() {
       setLoading(false);
       return;
     }
-    fetch("/api/cartoes", { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setList(Array.isArray(data) ? data : []))
+    Promise.all([
+      fetch("/api/cartoes", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch("/api/empresas", { headers: { Authorization: `Bearer ${token}` } }),
+    ])
+      .then(([resCart, resEmp]) =>
+        Promise.all([
+          resCart.ok ? resCart.json() : [],
+          resEmp.ok ? resEmp.json() : [],
+        ])
+      )
+      .then(([dataCart, dataEmp]) => {
+        setList(Array.isArray(dataCart) ? dataCart : []);
+        setContextoOptions(buildContextoOptions(Array.isArray(dataEmp) ? dataEmp : []));
+      })
       .catch(() => setList([]))
       .finally(() => setLoading(false));
   }, [token]);
@@ -197,29 +212,21 @@ export default function CartoesPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-2">Contexto</label>
-              <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50/80 p-1">
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, contexto: "PESSOAL" })}
-                  className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${
-                    form.contexto === "PESSOAL"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  Pessoal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, contexto: "ARCADE" })}
-                  className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${
-                    form.contexto === "ARCADE"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  Arcade
-                </button>
+              <div className="inline-flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50/80 p-1">
+                {contextoOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, contexto: opt.value })}
+                    className={`rounded-lg px-4 py-2.5 text-sm font-medium transition ${
+                      form.contexto === opt.value
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
             <div className="flex items-end">
@@ -255,7 +262,7 @@ export default function CartoesPage() {
                   fechamento={c.fechamento}
                   vencimento={c.vencimento}
                   layout={c.layout ?? "GENERICO"}
-                  contexto={c.contexto}
+                  contexto={contextoOptions.find((o) => o.value === c.contexto)?.label ?? c.contexto}
                   className="shadow-lg transition group-hover:shadow-xl"
                 />
               </Link>

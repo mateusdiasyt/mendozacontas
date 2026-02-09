@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { Key, Save, Shield, CheckCircle } from "lucide-react";
+import { Key, Save, Shield, CheckCircle, Building2, Plus, Pencil, Trash2 } from "lucide-react";
 
 type User = { id: string; email: string; nome: string | null; isAdmin: boolean } | null;
+type Empresa = { id: string; nome: string; ordem: number };
 
 export default function AdminPage() {
   const router = useRouter();
@@ -15,6 +16,11 @@ export default function AdminPage() {
   const [geminiApiKey, setGeminiApiKey] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [empresaForm, setEmpresaForm] = useState({ nome: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editNome, setEditNome] = useState("");
+  const [savingEmpresa, setSavingEmpresa] = useState(false);
 
   useEffect(() => {
     const t = typeof window !== "undefined" ? localStorage.getItem("mendozacontas_token") : null;
@@ -53,10 +59,107 @@ export default function AdminPage() {
   }, [token, user?.isAdmin]);
 
   useEffect(() => {
+    if (!token) return;
+    fetch("/api/empresas", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setEmpresas(Array.isArray(data) ? data : []))
+      .catch(() => setEmpresas([]));
+  }, [token]);
+
+  useEffect(() => {
     if (token && user && !user.isAdmin) {
       router.replace("/dashboard");
     }
   }, [token, user, router]);
+
+  function loadEmpresas() {
+    if (!token) return;
+    fetch("/api/empresas", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setEmpresas(Array.isArray(data) ? data : []));
+  }
+
+  async function handleEmpresaSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !empresaForm.nome.trim()) return;
+    setSavingEmpresa(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/empresas", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ nome: empresaForm.nome.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error ?? "Erro ao criar empresa" });
+        return;
+      }
+      setEmpresaForm({ nome: "" });
+      loadEmpresas();
+      setMessage({ type: "ok", text: "Empresa adicionada." });
+    } catch {
+      setMessage({ type: "error", text: "Erro de conexão" });
+    } finally {
+      setSavingEmpresa(false);
+    }
+  }
+
+  async function handleEmpresaUpdate(id: string) {
+    if (!token || !editNome.trim()) return;
+    setSavingEmpresa(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/empresas/${id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ nome: editNome.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error ?? "Erro ao atualizar" });
+        return;
+      }
+      setEditingId(null);
+      setEditNome("");
+      loadEmpresas();
+      setMessage({ type: "ok", text: "Empresa atualizada." });
+    } catch {
+      setMessage({ type: "error", text: "Erro de conexão" });
+    } finally {
+      setSavingEmpresa(false);
+    }
+  }
+
+  async function handleEmpresaDelete(id: string) {
+    if (!token || !confirm("Excluir esta empresa? Lançamentos vinculados continuarão com esse contexto.")) return;
+    setSavingEmpresa(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/empresas/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setMessage({ type: "error", text: data.error ?? "Erro ao excluir" });
+        return;
+      }
+      setEditingId(null);
+      loadEmpresas();
+      setMessage({ type: "ok", text: "Empresa excluída." });
+    } catch {
+      setMessage({ type: "error", text: "Erro de conexão" });
+    } finally {
+      setSavingEmpresa(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -183,6 +286,108 @@ export default function AdminPage() {
                 {saving ? "Salvando…" : "Salvar"}
               </button>
             </form>
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+              <Building2 className="h-5 w-5 text-[var(--primary)]" />
+              Empresas (contextos)
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Cadastre as empresas ou negócios. Elas aparecem como opções de contexto em despesas, receitas e cartões (em vez de apenas Pessoal/Arcade).
+            </p>
+            <form onSubmit={handleEmpresaSubmit} className="mt-4 flex flex-wrap items-end gap-3">
+              <div className="min-w-[200px] flex-1">
+                <label htmlFor="empresaNome" className="block text-sm font-medium text-slate-700">
+                  Nome da empresa
+                </label>
+                <input
+                  id="empresaNome"
+                  type="text"
+                  value={empresaForm.nome}
+                  onChange={(e) => setEmpresaForm({ nome: e.target.value })}
+                  placeholder="Ex: Arcade, Loja, CNPJ X"
+                  className="mt-1 w-full rounded-xl border border-slate-200 py-2.5 px-4 text-slate-900 placeholder-slate-400 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={savingEmpresa || !empresaForm.nome.trim()}
+                className="flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[var(--primary-hover)] disabled:opacity-50"
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar
+              </button>
+            </form>
+            {empresas.length > 0 && (
+              <ul className="mt-4 space-y-2">
+                {empresas.map((e) => (
+                  <li
+                    key={e.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50/50 py-2.5 px-4"
+                  >
+                    {editingId === e.id ? (
+                      <>
+                        <input
+                          type="text"
+                          value={editNome}
+                          onChange={(e) => setEditNome(e.target.value)}
+                          className="flex-1 min-w-0 rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                          autoFocus
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEmpresaUpdate(e.id)}
+                            disabled={savingEmpresa}
+                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
+                          >
+                            Salvar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setEditingId(null); setEditNome(""); }}
+                            className="rounded-lg bg-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-300"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-medium text-slate-800">{e.nome}</span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => { setEditingId(e.id); setEditNome(e.nome); }}
+                            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEmpresaDelete(e.id)}
+                            disabled={savingEmpresa}
+                            className="rounded-lg p-1.5 text-slate-500 hover:bg-red-100 hover:text-red-600 disabled:opacity-50"
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {message && (
+              <p
+                className={`mt-3 text-sm ${message.type === "ok" ? "text-emerald-600" : "text-red-600"}`}
+              >
+                {message.text}
+              </p>
+            )}
           </section>
         </div>
       </main>

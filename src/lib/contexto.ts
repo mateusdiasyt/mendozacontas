@@ -1,20 +1,24 @@
 /**
- * Contextos financeiros - PESSOAL e ARCADE.
- * Regra: dados nunca misturados; Arcade → Pessoal só via REPASSE.
+ * Contextos financeiros: "Pessoal" (fixo) + empresas cadastradas no admin.
+ * Regra: dados nunca misturados; empresa → Pessoal só via REPASSE.
  */
-import type { Contexto as ContextoPrisma } from "@prisma/client";
 
-export type Contexto = ContextoPrisma;
+export const PESSOAL_ID = "PESSOAL";
 
-export const CONTEXTOS: { value: Contexto; label: string }[] = [
-  { value: "PESSOAL", label: "Pessoal" },
-  { value: "ARCADE", label: "Arcade" },
-];
+export type ContextoOption = { value: string; label: string };
 
-export function isPessoal(c: Contexto): boolean {
-  return c === "PESSOAL";
+/** Gera lista para select: Pessoal + empresas (ordenadas por ordem, depois nome). */
+export function buildContextoOptions(empresas: { id: string; nome: string; ordem: number }[]): ContextoOption[] {
+  const list: ContextoOption[] = [{ value: PESSOAL_ID, label: "Pessoal" }];
+  const sorted = [...empresas].sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome));
+  sorted.forEach((e) => list.push({ value: e.id, label: e.nome }));
+  return list;
 }
 
-export function isArcade(c: Contexto): boolean {
-  return c === "ARCADE";
+export function isPessoal(contexto: string): boolean {
+  return contexto === PESSOAL_ID;
+}
+
+export function isEmpresa(contexto: string): boolean {
+  return contexto !== PESSOAL_ID && contexto.length > 0;
 }

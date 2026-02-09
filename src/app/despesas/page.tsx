@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { formatCurrency } from "@/lib/format";
 import { CATEGORIAS_DESPESA } from "@/lib/categorias";
+import { buildContextoOptions, PESSOAL_ID } from "@/lib/contexto";
 import Link from "next/link";
 import { TrendingDown, ArrowLeft, Repeat } from "lucide-react";
 
@@ -29,6 +30,9 @@ const FORMAS = [
 export default function DespesasPage() {
   const [token, setToken] = useState<string | null>(null);
   const [list, setList] = useState<DespesaItem[]>([]);
+  const [contextoOptions, setContextoOptions] = useState<{ value: string; label: string }[]>([
+    { value: PESSOAL_ID, label: "Pessoal" },
+  ]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -38,7 +42,7 @@ export default function DespesasPage() {
     categoria: "Outros" as string,
     data: new Date().toISOString().slice(0, 10),
     formaPagamento: "PIX" as "PIX" | "DINHEIRO" | "CARTAO",
-    contexto: "PESSOAL" as "PESSOAL" | "ARCADE",
+    contexto: PESSOAL_ID,
     recorrente: false,
     parcelas: "1",
     parcelaAtual: "1",
@@ -53,9 +57,20 @@ export default function DespesasPage() {
       setLoading(false);
       return;
     }
-    fetch("/api/despesas", { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setList(Array.isArray(data) ? data : []))
+    Promise.all([
+      fetch("/api/despesas", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch("/api/empresas", { headers: { Authorization: `Bearer ${token}` } }),
+    ])
+      .then(([resDesp, resEmp]) =>
+        Promise.all([
+          resDesp.ok ? resDesp.json() : [],
+          resEmp.ok ? resEmp.json() : [],
+        ])
+      )
+      .then(([dataDesp, dataEmp]) => {
+        setList(Array.isArray(dataDesp) ? dataDesp : []);
+        setContextoOptions(buildContextoOptions(Array.isArray(dataEmp) ? dataEmp : []));
+      })
       .catch(() => setList([]))
       .finally(() => setLoading(false));
   }, [token]);
@@ -220,29 +235,21 @@ export default function DespesasPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-2">Contexto</label>
-              <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50/80 p-1">
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, contexto: "PESSOAL" })}
-                  className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${
-                    form.contexto === "PESSOAL"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  Pessoal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, contexto: "ARCADE" })}
-                  className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${
-                    form.contexto === "ARCADE"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  Arcade
-                </button>
+              <div className="inline-flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50/80 p-1">
+                {contextoOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, contexto: opt.value })}
+                    className={`rounded-lg px-4 py-2.5 text-sm font-medium transition ${
+                      form.contexto === opt.value
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
@@ -338,7 +345,9 @@ export default function DespesasPage() {
                     <td className="p-3">{d.descricao}</td>
                     <td className="p-3 text-slate-600">{d.categoria}</td>
                     <td className="p-3 text-slate-600">{d.formaPagamento}</td>
-                    <td className="p-3 text-slate-600">{d.contexto}</td>
+                    <td className="p-3 text-slate-600">
+                      {contextoOptions.find((o) => o.value === d.contexto)?.label ?? d.contexto}
+                    </td>
                     <td className="p-3 text-right font-medium text-rose-700">
                       {formatCurrency(d.valor)}
                     </td>

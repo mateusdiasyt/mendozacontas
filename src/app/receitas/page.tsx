@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { formatCurrency } from "@/lib/format";
+import { buildContextoOptions, PESSOAL_ID } from "@/lib/contexto";
 import Link from "next/link";
 import { TrendingUp, ArrowLeft, Plus, FileText } from "lucide-react";
 
@@ -26,6 +27,9 @@ const TIPOS = [
 export default function ReceitasPage() {
   const [token, setToken] = useState<string | null>(null);
   const [list, setList] = useState<ReceitaItem[]>([]);
+  const [contextoOptions, setContextoOptions] = useState<{ value: string; label: string }[]>([
+    { value: PESSOAL_ID, label: "Pessoal" },
+  ]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -34,7 +38,7 @@ export default function ReceitasPage() {
     valor: "",
     data: new Date().toISOString().slice(0, 10),
     tipo: "EXTRA",
-    contexto: "PESSOAL" as "PESSOAL" | "ARCADE",
+    contexto: PESSOAL_ID,
     observacao: "",
   });
 
@@ -47,9 +51,20 @@ export default function ReceitasPage() {
       setLoading(false);
       return;
     }
-    fetch("/api/receitas", { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setList(Array.isArray(data) ? data : []))
+    Promise.all([
+      fetch("/api/receitas", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch("/api/empresas", { headers: { Authorization: `Bearer ${token}` } }),
+    ])
+      .then(([resRec, resEmp]) =>
+        Promise.all([
+          resRec.ok ? resRec.json() : [],
+          resEmp.ok ? resEmp.json() : [],
+        ])
+      )
+      .then(([dataRec, dataEmp]) => {
+        setList(Array.isArray(dataRec) ? dataRec : []);
+        setContextoOptions(buildContextoOptions(Array.isArray(dataEmp) ? dataEmp : []));
+      })
       .catch(() => setList([]))
       .finally(() => setLoading(false));
   }, [token]);
@@ -206,29 +221,21 @@ export default function ReceitasPage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-2">Contexto</label>
-              <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50/80 p-1">
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, contexto: "PESSOAL" })}
-                  className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${
-                    form.contexto === "PESSOAL"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  Pessoal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, contexto: "ARCADE" })}
-                  className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${
-                    form.contexto === "ARCADE"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  Arcade
-                </button>
+              <div className="inline-flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50/80 p-1">
+                {contextoOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, contexto: opt.value })}
+                    className={`rounded-lg px-4 py-2.5 text-sm font-medium transition ${
+                      form.contexto === opt.value
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -282,7 +289,9 @@ export default function ReceitasPage() {
                     <td className="p-4 text-slate-600">{r.data}</td>
                     <td className="p-4 font-medium text-slate-900">{r.descricao}</td>
                     <td className="p-4 text-slate-600">{r.tipo}</td>
-                    <td className="p-4 text-slate-600">{r.contexto}</td>
+                    <td className="p-4 text-slate-600">
+                      {contextoOptions.find((o) => o.value === r.contexto)?.label ?? r.contexto}
+                    </td>
                     <td className="p-4 text-right font-semibold text-emerald-600">
                       +{formatCurrency(r.valor)}
                     </td>

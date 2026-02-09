@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import type { Contexto, FormaPagamento } from "@prisma/client";
+import type { FormaPagamento } from "@prisma/client";
+import { PESSOAL_ID } from "@/lib/contexto";
 import { startOfMonth, endOfMonth, subDays } from "date-fns";
 
 const GEMINI_KEY = "gemini_api_key";
@@ -95,11 +96,11 @@ export async function POST(request: Request) {
   const fimMes = endOfMonth(now);
   const [receitasPessoal, despesasPessoal] = await Promise.all([
     prisma.receita.aggregate({
-      where: { userId: user.id, contexto: "PESSOAL", data: { gte: inicioMes, lte: fimMes } },
+      where: { userId: user.id, contexto: PESSOAL_ID, data: { gte: inicioMes, lte: fimMes } },
       _sum: { valor: true },
     }),
     prisma.despesa.aggregate({
-      where: { userId: user.id, contexto: "PESSOAL", data: { gte: inicioMes, lte: fimMes } },
+      where: { userId: user.id, contexto: PESSOAL_ID, data: { gte: inicioMes, lte: fimMes } },
       _sum: { valor: true },
     }),
   ]);
@@ -184,8 +185,16 @@ ${message}`;
   const created: Array<{ tipo: string; descricao: string; valor: number; data: string; contexto: string }> = [];
   const errors: string[] = [];
 
+  const primeiraEmpresa = await prisma.empresa.findFirst({
+    where: { userId: user.id },
+    orderBy: [{ ordem: "asc" }, { nome: "asc" }],
+  });
+
   for (const item of items) {
-    const contexto = (item.contexto?.toUpperCase() === "ARCADE" ? "ARCADE" : "PESSOAL") as Contexto;
+    const contexto =
+      item.contexto?.toUpperCase() === "ARCADE"
+        ? primeiraEmpresa?.id ?? PESSOAL_ID
+        : PESSOAL_ID;
     const formaPagamento = (["PIX", "DINHEIRO", "CARTAO"].includes(item.formaPagamento?.toUpperCase() ?? "")
       ? item.formaPagamento.toUpperCase()
       : "PIX") as FormaPagamento;

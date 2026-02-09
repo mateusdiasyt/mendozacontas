@@ -3,8 +3,8 @@ import { getUserFromToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 /**
- * POST: Faz repasse Arcade → Pessoal.
- * Cria 1 Repasse + 1 Despesa (ARCADE) + 1 Receita (PESSOAL, tipo REPASSE).
+ * POST: Faz repasse Empresa → Pessoal.
+ * Cria 1 Repasse + 1 Despesa (contexto = empresa) + 1 Receita (PESSOAL, tipo REPASSE).
  */
 export async function POST(request: Request) {
   const user = await getUserFromToken(request.headers.get("authorization") ?? null);
@@ -12,11 +12,26 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { valor, data } = body as { valor?: number; data?: string };
+    const { valor, data, contextoOrigem } = body as {
+      valor?: number;
+      data?: string;
+      contextoOrigem?: string;
+    };
 
     const valorNum = Number(valor);
     if (isNaN(valorNum) || valorNum <= 0) {
       return NextResponse.json({ error: "Valor deve ser maior que zero" }, { status: 400 });
+    }
+
+    // De qual empresa sai o repasse (obrigatório ser uma empresa do usuário)
+    const empresa =
+      contextoOrigem &&
+      (await prisma.empresa.findFirst({ where: { id: contextoOrigem, userId: user.id } }));
+    if (!empresa) {
+      return NextResponse.json(
+        { error: "Selecione a empresa de origem do repasse" },
+        { status: 400 }
+      );
     }
 
     const dataRepasse = data ? new Date(data) : new Date();
@@ -35,7 +50,7 @@ export async function POST(request: Request) {
         tx.receita.create({
           data: {
             userId: user.id,
-            descricao: `Repasse do Arcade (${dataStr})`,
+            descricao: `Repasse ${empresa.nome} (${dataStr})`,
             valor: valorNum,
             data: dataRepasse,
             tipo: "REPASSE",
@@ -51,7 +66,7 @@ export async function POST(request: Request) {
             categoria: "Repasse",
             data: dataRepasse,
             formaPagamento: "PIX",
-            contexto: "ARCADE",
+            contexto: empresa.id,
             recorrente: false,
             repasseId: r.id,
           },

@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import type { Contexto, LayoutCartao } from "@prisma/client";
+import { PESSOAL_ID } from "@/lib/contexto";
+import type { LayoutCartao } from "@prisma/client";
 
 export async function GET(request: Request) {
   const user = await getUserFromToken(request.headers.get("authorization") ?? null);
   if (!user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const contexto = searchParams.get("contexto") as Contexto | null;
+  const contexto = searchParams.get("contexto");
 
-  const where: { userId: string; contexto?: Contexto } = { userId: user.id };
-  if (contexto === "PESSOAL" || contexto === "ARCADE") where.contexto = contexto;
+  const where: { userId: string; contexto?: string } = { userId: user.id };
+  if (contexto === PESSOAL_ID || (contexto && contexto.length > 0)) where.contexto = contexto;
 
   const cartoes = await prisma.cartao.findMany({
     where,
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
       limite?: number;
       fechamento?: number;
       vencimento?: number;
-      contexto?: Contexto;
+      contexto?: string;
       layout?: LayoutCartao;
     };
 
@@ -56,8 +57,15 @@ export async function POST(request: Request) {
     }
     const fech = Math.min(31, Math.max(1, Number(fechamento) || 1));
     const venc = Math.min(31, Math.max(1, Number(vencimento) || 1));
-    if (contexto !== "PESSOAL" && contexto !== "ARCADE") {
-      return NextResponse.json({ error: "Contexto deve ser PESSOAL ou ARCADE" }, { status: 400 });
+    const contextoValido =
+      contexto === PESSOAL_ID ||
+      (contexto &&
+        (await prisma.empresa.findFirst({ where: { id: contexto, userId: user.id } })));
+    if (!contextoValido) {
+      return NextResponse.json(
+        { error: "Contexto deve ser Pessoal ou uma empresa cadastrada" },
+        { status: 400 }
+      );
     }
     const layoutVal = ["NUBANK", "ITAU", "GENERICO"].includes(layout ?? "") ? layout : "GENERICO";
 

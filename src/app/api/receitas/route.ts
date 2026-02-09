@@ -1,20 +1,21 @@
 import { NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import type { Contexto, TipoReceita } from "@prisma/client";
+import { PESSOAL_ID } from "@/lib/contexto";
+import type { TipoReceita } from "@prisma/client";
 
 export async function GET(request: Request) {
   const user = await getUserFromToken(request.headers.get("authorization") ?? null);
   if (!user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const contexto = searchParams.get("contexto") as Contexto | null;
+  const contexto = searchParams.get("contexto");
   const mes = searchParams.get("mes"); // YYYY-MM
 
-  const where: { userId: string; contexto?: Contexto; data?: { gte: Date; lte: Date } } = {
+  const where: { userId: string; contexto?: string; data?: { gte: Date; lte: Date } } = {
     userId: user.id,
   };
-  if (contexto === "PESSOAL" || contexto === "ARCADE") where.contexto = contexto;
+  if (contexto === PESSOAL_ID || (contexto && contexto.length > 0)) where.contexto = contexto;
   if (mes) {
     const [y, m] = mes.split("-").map(Number);
     const start = new Date(y, m - 1, 1);
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
       valor?: number;
       data?: string;
       tipo?: TipoReceita;
-      contexto?: Contexto;
+      contexto?: string;
       observacao?: string;
     };
 
@@ -65,8 +66,15 @@ export async function POST(request: Request) {
     if (!["FIXA", "EXTRA", "ARCADE_DIARIA", "REPASSE"].includes(tipo ?? "")) {
       return NextResponse.json({ error: "Tipo inválido" }, { status: 400 });
     }
-    if (contexto !== "PESSOAL" && contexto !== "ARCADE") {
-      return NextResponse.json({ error: "Contexto deve ser PESSOAL ou ARCADE" }, { status: 400 });
+    const contextoValido =
+      contexto === PESSOAL_ID ||
+      (contexto &&
+        (await prisma.empresa.findFirst({ where: { id: contexto, userId: user.id } })));
+    if (!contextoValido) {
+      return NextResponse.json(
+        { error: "Contexto deve ser Pessoal ou uma empresa cadastrada" },
+        { status: 400 }
+      );
     }
 
     const receita = await prisma.receita.create({

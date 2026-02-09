@@ -7,16 +7,19 @@ import Link from "next/link";
 import { ArrowLeftRight } from "lucide-react";
 
 type RepasseItem = { id: string; valor: number; data: string };
+type Empresa = { id: string; nome: string; ordem: number };
 
 export default function RepassePage() {
   const [token, setToken] = useState<string | null>(null);
   const [list, setList] = useState<RepasseItem[]>([]);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     valor: "",
     data: new Date().toISOString().slice(0, 10),
+    contextoOrigem: "" as string,
   });
 
   useEffect(() => {
@@ -28,9 +31,25 @@ export default function RepassePage() {
       setLoading(false);
       return;
     }
-    fetch("/api/repasse", { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setList(Array.isArray(data) ? data : []))
+    Promise.all([
+      fetch("/api/repasse", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch("/api/empresas", { headers: { Authorization: `Bearer ${token}` } }),
+    ])
+      .then(([resRep, resEmp]) =>
+        Promise.all([
+          resRep.ok ? resRep.json() : [],
+          resEmp.ok ? resEmp.json() : [],
+        ])
+      )
+      .then(([dataRep, dataEmp]) => {
+        setList(Array.isArray(dataRep) ? dataRep : []);
+        const emps = Array.isArray(dataEmp) ? dataEmp : [];
+        setEmpresas(emps);
+        setForm((f) => ({
+          ...f,
+          contextoOrigem: f.contextoOrigem || (emps[0]?.id ?? ""),
+        }));
+      })
       .catch(() => setList([]))
       .finally(() => setLoading(false));
   }, [token]);
@@ -50,6 +69,10 @@ export default function RepassePage() {
       setError("Informe um valor maior que zero.");
       return;
     }
+    if (!form.contextoOrigem) {
+      setError("Selecione a empresa de origem. Cadastre empresas em Admin.");
+      return;
+    }
     setSaving(true);
     fetch("/api/repasse", {
       method: "POST",
@@ -57,7 +80,11 @@ export default function RepassePage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ valor, data: form.data }),
+      body: JSON.stringify({
+        valor,
+        data: form.data,
+        contextoOrigem: form.contextoOrigem,
+      }),
     })
       .then((res) => {
         if (!res.ok) return res.json().then((d) => Promise.reject(new Error(d.error ?? "Erro")));
@@ -99,7 +126,7 @@ export default function RepassePage() {
       />
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-slate-800">Repasse (Arcade → Pessoal)</h1>
+          <h1 className="text-xl font-semibold text-slate-800">Repasse (Empresa → Pessoal)</h1>
           <Link href="/dashboard" className="text-sm text-slate-600 hover:underline">
             ← Voltar ao dashboard
           </Link>
@@ -108,7 +135,7 @@ export default function RepassePage() {
         <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-amber-800">
           <p className="text-sm font-medium">Regra do repasse</p>
           <p className="mt-1 text-sm">
-            O valor sai do contexto <strong>Arcade</strong> (como despesa) e entra no contexto{" "}
+            O valor sai da <strong>empresa</strong> escolhida (como despesa) e entra no contexto{" "}
             <strong>Pessoal</strong> (como receita). Assim o dinheiro da empresa só entra em casa quando
             você registra o repasse.
           </p>
@@ -124,7 +151,29 @@ export default function RepassePage() {
               {error}
             </div>
           )}
+          {empresas.length === 0 && (
+            <p className="mb-4 text-sm text-amber-700">
+              Cadastre pelo menos uma empresa em <Link href="/admin" className="font-medium underline">Admin</Link> para fazer repasses.
+            </p>
+          )}
           <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-4">
+            {empresas.length > 0 && (
+              <div>
+                <label className="block text-sm text-slate-600">De qual empresa? *</label>
+                <select
+                  value={form.contextoOrigem}
+                  onChange={(e) => setForm({ ...form, contextoOrigem: e.target.value })}
+                  className="mt-1 rounded-lg border border-slate-300 px-3 py-2 min-w-[180px]"
+                >
+                  <option value="">Selecione</option>
+                  {empresas.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className="block text-sm text-slate-600">Valor (R$) *</label>
               <input
@@ -147,7 +196,7 @@ export default function RepassePage() {
             </div>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || empresas.length === 0}
               className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-amber-600 disabled:opacity-50"
             >
               {saving ? "Processando…" : "Realizar repasse"}
