@@ -37,9 +37,14 @@ export async function POST(request: Request) {
       user: { id: user.id, email: user.email, nome: user.nome },
     });
   } catch (e) {
-    console.error("Register error:", e);
+    const message = e instanceof Error ? e.message : String(e);
+    console.error("Register error:", message, e);
+    // Em produção não expõe detalhes; veja os logs na Vercel (Functions → Logs)
     return NextResponse.json(
-      { error: "Erro ao criar conta" },
+      {
+        error: "Erro ao criar conta",
+        ...(process.env.NODE_ENV === "development" && { detail: message }),
+      },
       { status: 500 }
     );
   }

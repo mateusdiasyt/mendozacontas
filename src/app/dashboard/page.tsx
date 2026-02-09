@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { formatCurrency } from "@/lib/format";
+import Link from "next/link";
 
 type DashboardData = {
   saldoPessoalAtual: number;
@@ -75,35 +77,33 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white px-4 py-4 shadow-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <h1 className="text-xl font-bold text-slate-800">MendozaContas</h1>
-          <div className="flex items-center gap-3">
-            {token ? (
-              <button
-                type="button"
-                onClick={() => {
-                  localStorage.removeItem("mendozacontas_token");
-                  setToken(null);
-                  setData(defaultData);
-                }}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
-              >
-                Sair
-              </button>
-            ) : (
-              <a
-                href="/login"
-                className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700"
-              >
-                Entrar
-              </a>
-            )}
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        token={token}
+        onLogout={() => {
+          localStorage.removeItem("mendozacontas_token");
+          setToken(null);
+          setData(defaultData);
+        }}
+      />
 
       <main className="mx-auto max-w-6xl px-4 py-8">
+        {token && (
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4">
+            <span className="text-sm text-slate-600">Inserir lançamentos:</span>
+            <Link
+              href="/receitas"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+            >
+              + Receita
+            </Link>
+            <Link
+              href="/despesas"
+              className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700"
+            >
+              + Despesa
+            </Link>
+          </div>
+        )}
         {!token && (
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800">
             Faça login para ver seus dados reais. Os valores abaixo são apenas ilustrativos.
