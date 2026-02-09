@@ -121,7 +121,28 @@ export function ChatPanel() {
                         : "bg-slate-100 text-slate-800"
                     }`}
                   >
-                    <span className="whitespace-pre-wrap">{msg.text}</span>
+                    {msg.role === "user" ? (
+                      <span className="whitespace-pre-wrap">{msg.text}</span>
+                    ) : (
+                      <div className="space-y-2 leading-relaxed">
+                        {msg.text
+                          .split(/\n\n+/)
+                          .filter((p) => p.trim())
+                          .map((para, j) => (
+                            <p key={j}>
+                              {para
+                                .trim()
+                                .split("\n")
+                                .map((line, k, arr) => (
+                                  <span key={k}>
+                                    {line}
+                                    {k < arr.length - 1 && <br />}
+                                  </span>
+                                ))}
+                            </p>
+                          ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
