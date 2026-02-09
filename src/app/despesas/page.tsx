@@ -36,6 +36,7 @@ export default function DespesasPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [filtroContexto, setFiltroContexto] = useState<string>(""); // "" = Todas
   const [form, setForm] = useState({
     descricao: "",
     valor: "",
@@ -300,63 +301,148 @@ export default function DespesasPage() {
           </form>
         </div>
 
-        <h2 className="mb-3 text-sm font-medium text-slate-700">Últimas despesas</h2>
-        {loading ? (
-          <div className="h-32 animate-pulse rounded-xl bg-slate-200" />
-        ) : list.length === 0 ? (
-          <p className="rounded-2xl border border-slate-100 shadow-card bg-white p-6 text-slate-500">
-            Nenhuma despesa cadastrada. Use o formulário acima para adicionar.
-          </p>
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-slate-100 shadow-card bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50">
-                <tr>
-                  <th className="w-10 p-3 font-medium" title="Recorrente">Rec.</th>
-                  <th className="w-12 p-3 font-medium" title="Parcela">Parc.</th>
-                  <th className="p-3 font-medium">Data</th>
-                  <th className="p-3 font-medium">Descrição</th>
-                  <th className="p-3 font-medium">Categoria</th>
-                  <th className="p-3 font-medium">Forma</th>
-                  <th className="p-3 font-medium">Contexto</th>
-                  <th className="p-3 font-medium text-right">Valor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.map((d) => (
-                  <tr key={d.id} className="border-b border-slate-100 last:border-0">
-                    <td className="p-3">
-                      {d.recorrente ? (
-                        <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-violet-700" title="Despesa recorrente">
-                          <Repeat className="h-3.5 w-3.5" />
-                        </span>
-                      ) : (
-                        <span className="text-slate-300">—</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      {d.parcelas > 1 ? (
-                        <span className="text-slate-600">{d.parcelaAtual}/{d.parcelas}</span>
-                      ) : (
-                        <span className="text-slate-300">—</span>
-                      )}
-                    </td>
-                    <td className="p-3 text-slate-600">{d.data}</td>
-                    <td className="p-3">{d.descricao}</td>
-                    <td className="p-3 text-slate-600">{d.categoria}</td>
-                    <td className="p-3 text-slate-600">{d.formaPagamento}</td>
-                    <td className="p-3 text-slate-600">
-                      {contextoOptions.find((o) => o.value === d.contexto)?.label ?? d.contexto}
-                    </td>
-                    <td className="p-3 text-right font-medium text-rose-700">
-                      {formatCurrency(d.valor)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {/* Resumo por contexto */}
+        {!loading && list.length > 0 && (
+          <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Resumo por contexto
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              {contextoOptions.map((opt) => {
+                const despesasCtx = list.filter((d) => d.contexto === opt.value);
+                const total = despesasCtx.reduce((s, d) => s + d.valor, 0);
+                if (despesasCtx.length === 0) return null;
+                const isActive = filtroContexto === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setFiltroContexto(isActive ? "" : opt.value)}
+                    className={`rounded-xl border px-4 py-2.5 text-left text-sm transition ${
+                      isActive
+                        ? "border-rose-300 bg-rose-50 text-rose-800"
+                        : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span className="font-medium">{opt.label}</span>
+                    <span className="ml-2 text-slate-500">
+                      {despesasCtx.length} {despesasCtx.length === 1 ? "despesa" : "despesas"} · {formatCurrency(total)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
         )}
+
+        {/* Listagem com filtro por aba */}
+        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-3">
+            <h2 className="text-sm font-semibold text-slate-800">Despesas</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Clique em um contexto no resumo acima para filtrar, ou veja todas abaixo.
+            </p>
+            {list.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => setFiltroContexto("")}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                    filtroContexto === ""
+                      ? "bg-slate-800 text-white"
+                      : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                  }`}
+                >
+                  Todas
+                </button>
+                {contextoOptions.map((opt) => {
+                  const count = list.filter((d) => d.contexto === opt.value).length;
+                  if (count === 0) return null;
+                  const isActive = filtroContexto === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFiltroContexto(opt.value)}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                        isActive ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="h-48 animate-pulse bg-slate-100" />
+          ) : list.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">
+              Nenhuma despesa cadastrada. Use o formulário acima para adicionar.
+            </div>
+          ) : (() => {
+            const filtradas = filtroContexto
+              ? list.filter((d) => d.contexto === filtroContexto)
+              : list;
+            const mostrarColunaContexto = !filtroContexto;
+            return (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b border-slate-200 bg-slate-50">
+                    <tr>
+                      <th className="w-10 p-3 font-medium text-slate-600" title="Recorrente">Rec.</th>
+                      <th className="w-12 p-3 font-medium text-slate-600" title="Parcela">Parc.</th>
+                      <th className="p-3 font-medium text-slate-600">Data</th>
+                      <th className="p-3 font-medium text-slate-600">Descrição</th>
+                      <th className="p-3 font-medium text-slate-600">Categoria</th>
+                      <th className="p-3 font-medium text-slate-600">Forma</th>
+                      {mostrarColunaContexto && (
+                        <th className="p-3 font-medium text-slate-600">Contexto</th>
+                      )}
+                      <th className="p-3 text-right font-medium text-slate-600">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtradas.map((d) => (
+                      <tr key={d.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                        <td className="p-3">
+                          {d.recorrente ? (
+                            <span className="inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-violet-700" title="Recorrente">
+                              <Repeat className="h-3.5 w-3.5" />
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {d.parcelas > 1 ? (
+                            <span className="text-slate-600">{d.parcelaAtual}/{d.parcelas}</span>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-slate-600">{d.data}</td>
+                        <td className="p-3 font-medium text-slate-800">{d.descricao}</td>
+                        <td className="p-3 text-slate-600">{d.categoria}</td>
+                        <td className="p-3 text-slate-600">{d.formaPagamento}</td>
+                        {mostrarColunaContexto && (
+                          <td className="p-3 text-slate-600">
+                            {contextoOptions.find((o) => o.value === d.contexto)?.label ?? d.contexto}
+                          </td>
+                        )}
+                        <td className="p-3 text-right font-medium text-rose-600">
+                          {formatCurrency(d.valor)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+        </section>
       </main>
     </div>
   );

@@ -15,7 +15,8 @@ export default function AdminPage() {
   const [geminiConfigured, setGeminiConfigured] = useState<boolean | null>(null);
   const [geminiApiKey, setGeminiApiKey] = useState("");
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+  const [geminiMessage, setGeminiMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+  const [empresaMessage, setEmpresaMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [empresaForm, setEmpresaForm] = useState({ nome: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -83,7 +84,7 @@ export default function AdminPage() {
     e.preventDefault();
     if (!token || !empresaForm.nome.trim()) return;
     setSavingEmpresa(true);
-    setMessage(null);
+    setEmpresaMessage(null);
     try {
       const res = await fetch("/api/empresas", {
         method: "POST",
@@ -95,14 +96,14 @@ export default function AdminPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setMessage({ type: "error", text: data.error ?? "Erro ao criar empresa" });
+        setEmpresaMessage({ type: "error", text: data.error ?? "Erro ao criar empresa" });
         return;
       }
       setEmpresaForm({ nome: "" });
       loadEmpresas();
-      setMessage({ type: "ok", text: "Empresa adicionada." });
+      setEmpresaMessage({ type: "ok", text: "Empresa adicionada." });
     } catch {
-      setMessage({ type: "error", text: "Erro de conexão" });
+      setEmpresaMessage({ type: "error", text: "Erro de conexão" });
     } finally {
       setSavingEmpresa(false);
     }
@@ -111,7 +112,7 @@ export default function AdminPage() {
   async function handleEmpresaUpdate(id: string) {
     if (!token || !editNome.trim()) return;
     setSavingEmpresa(true);
-    setMessage(null);
+    setEmpresaMessage(null);
     try {
       const res = await fetch(`/api/empresas/${id}`, {
         method: "PUT",
@@ -123,15 +124,15 @@ export default function AdminPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setMessage({ type: "error", text: data.error ?? "Erro ao atualizar" });
+        setEmpresaMessage({ type: "error", text: data.error ?? "Erro ao atualizar" });
         return;
       }
       setEditingId(null);
       setEditNome("");
       loadEmpresas();
-      setMessage({ type: "ok", text: "Empresa atualizada." });
+      setEmpresaMessage({ type: "ok", text: "Empresa atualizada." });
     } catch {
-      setMessage({ type: "error", text: "Erro de conexão" });
+      setEmpresaMessage({ type: "error", text: "Erro de conexão" });
     } finally {
       setSavingEmpresa(false);
     }
@@ -140,7 +141,7 @@ export default function AdminPage() {
   async function handleEmpresaDelete(id: string) {
     if (!token || !confirm("Excluir esta empresa? Lançamentos vinculados continuarão com esse contexto.")) return;
     setSavingEmpresa(true);
-    setMessage(null);
+    setEmpresaMessage(null);
     try {
       const res = await fetch(`/api/empresas/${id}`, {
         method: "DELETE",
@@ -148,14 +149,14 @@ export default function AdminPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setMessage({ type: "error", text: data.error ?? "Erro ao excluir" });
+        setEmpresaMessage({ type: "error", text: data.error ?? "Erro ao excluir" });
         return;
       }
       setEditingId(null);
       loadEmpresas();
-      setMessage({ type: "ok", text: "Empresa excluída." });
+      setEmpresaMessage({ type: "ok", text: "Empresa excluída." });
     } catch {
-      setMessage({ type: "error", text: "Erro de conexão" });
+      setEmpresaMessage({ type: "error", text: "Erro de conexão" });
     } finally {
       setSavingEmpresa(false);
     }
@@ -163,7 +164,7 @@ export default function AdminPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setMessage(null);
+    setGeminiMessage(null);
     setSaving(true);
     try {
       const res = await fetch("/api/admin/settings", {
@@ -176,14 +177,14 @@ export default function AdminPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setMessage({ type: "error", text: data.error ?? "Erro ao salvar" });
+        setGeminiMessage({ type: "error", text: data.error ?? "Erro ao salvar" });
         return;
       }
       setGeminiConfigured(Boolean(data.geminiConfigured));
-      setMessage({ type: "ok", text: "Configuração salva." });
+      setGeminiMessage({ type: "ok", text: "Configuração salva." });
       setGeminiApiKey("");
     } catch {
-      setMessage({ type: "error", text: "Erro de conexão" });
+      setGeminiMessage({ type: "error", text: "Erro de conexão" });
     } finally {
       setSaving(false);
     }
@@ -266,15 +267,15 @@ export default function AdminPage() {
                   autoComplete="off"
                 />
               </div>
-              {message && (
+              {geminiMessage && (
                 <p
                   className={
-                    message.type === "ok"
+                    geminiMessage.type === "ok"
                       ? "text-sm text-emerald-600"
                       : "text-sm text-red-600"
                   }
                 >
-                  {message.text}
+                  {geminiMessage.text}
                 </p>
               )}
               <button
@@ -381,11 +382,11 @@ export default function AdminPage() {
                 ))}
               </ul>
             )}
-            {message && (
+            {empresaMessage && (
               <p
-                className={`mt-3 text-sm ${message.type === "ok" ? "text-emerald-600" : "text-red-600"}`}
+                className={`mt-3 text-sm ${empresaMessage.type === "ok" ? "text-emerald-600" : "text-red-600"}`}
               >
-                {message.text}
+                {empresaMessage.text}
               </p>
             )}
           </section>
