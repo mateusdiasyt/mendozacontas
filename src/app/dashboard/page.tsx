@@ -176,72 +176,93 @@ export default function DashboardPage() {
         ) : (
           <>
             <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <BankCard
-                title="Saldo pessoal (mês)"
-                value={formatCurrency(d.saldoPessoalAtual)}
-                subtitle="Receitas − despesas"
-                variant={d.saldoPessoalAtual >= 0 ? "success" : "danger"}
-                icon={Wallet}
-              />
-              <BankCard
-                title="Lucro Arcade (mês)"
-                value={formatCurrency(d.lucroArcadeMes)}
-                subtitle="Negócio"
-                variant={d.lucroArcadeMes >= 0 ? "success" : "danger"}
-                icon={Store}
-              />
-              <BankCard
-                title="Projeção de fechamento"
-                value={formatCurrency(d.projecaoFechamentoPessoal)}
-                subtitle="Previsão fim do mês"
-                variant={
-                  d.projecaoFechamentoPessoal >= 0
-                    ? "success"
-                    : d.projecaoFechamentoPessoal >= -500
-                      ? "warning"
-                      : "danger"
-                }
-                icon={Target}
-              />
-              <BankCard
-                title="Status"
-                value={
-                  <span className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-sm font-medium ${status.color}`}>
-                    <status.icon className="h-3.5 w-3.5" />
-                    {status.label}
-                  </span>
-                }
-                variant="default"
-                icon={AlertCircle}
-              />
-              <BankCard
-                title="Quanto pode gastar"
-                value={formatCurrency(d.quantoPodeGastar ?? 0)}
-                subtitle="Margem livre (após faturas)"
-                variant={(d.quantoPodeGastar ?? 0) > 0 ? "success" : "default"}
-                icon={PiggyBank}
-              />
-              <BankCard
-                title="Fatura dos cartões"
-                value={formatCurrency(d.totalFaturaCartoes ?? 0)}
-                subtitle="Ciclo atual"
-                variant="violet"
-                icon={CreditCard}
-              />
-              <BankCard
-                title="Projeção Arcade (mês)"
-                value={formatCurrency(d.projecaoArcadeMes)}
-                subtitle={`Média diária: ${formatCurrency(d.mediaDiariaArcade)}`}
-                variant="primary"
-                icon={TrendingUp}
-              />
-              <BankCard
-                title="Extra necessário"
-                value={formatCurrency(d.extraNecessario)}
-                subtitle="Para fechar no azul"
-                variant={d.extraNecessario > 0 ? "warning" : "default"}
-                icon={TrendingUp}
-              />
+              <div className="animate-card-enter opacity-0" style={{ animationDelay: "0ms" }}>
+                <BankCard
+                  title="Saldo pessoal (mês)"
+                  value={formatCurrency(d.saldoPessoalAtual)}
+                  subtitle="Receitas − despesas"
+                  variant={d.saldoPessoalAtual >= 0 ? "success" : "danger"}
+                  icon={Wallet}
+                />
+              </div>
+              <div className="animate-card-enter opacity-0" style={{ animationDelay: "60ms" }}>
+                <BankCard
+                  title="Lucro Arcade (mês)"
+                  value={formatCurrency(d.lucroArcadeMes)}
+                  subtitle="Negócio"
+                  variant={d.lucroArcadeMes >= 0 ? "success" : "danger"}
+                  icon={Store}
+                />
+              </div>
+              <div className="animate-card-enter opacity-0" style={{ animationDelay: "120ms" }}>
+                <BankCard
+                  title="Projeção de fechamento"
+                  value={formatCurrency(d.projecaoFechamentoPessoal)}
+                  subtitle="Previsão fim do mês"
+                  variant={
+                    d.projecaoFechamentoPessoal >= 0
+                      ? "success"
+                      : d.projecaoFechamentoPessoal >= -500
+                        ? "warning"
+                        : "danger"
+                  }
+                  icon={Target}
+                />
+              </div>
+              <div
+                className={d.status === "CRITICO" ? "card-enter-then-pulse rounded-2xl" : "animate-card-enter opacity-0"}
+                style={{ animationDelay: d.status === "CRITICO" ? undefined : "180ms" }}
+              >
+                <BankCard
+                  title="Status"
+                  value={
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-sm font-medium ${status.color} ${d.status === "CRITICO" ? "animate-glow-red" : ""} ${d.status === "ATENCAO" ? "animate-glow-amber" : ""}`}
+                    >
+                      <status.icon className="h-3.5 w-3.5" />
+                      {status.label}
+                    </span>
+                  }
+                  variant="default"
+                  icon={AlertCircle}
+                />
+              </div>
+              <div className="animate-card-enter opacity-0" style={{ animationDelay: "240ms" }}>
+                <BankCard
+                  title="Quanto pode gastar"
+                  value={formatCurrency(d.quantoPodeGastar ?? 0)}
+                  subtitle="Margem livre (após faturas)"
+                  variant={(d.quantoPodeGastar ?? 0) > 0 ? "success" : "default"}
+                  icon={PiggyBank}
+                />
+              </div>
+              <div className="animate-card-enter opacity-0" style={{ animationDelay: "300ms" }}>
+                <BankCard
+                  title="Fatura dos cartões"
+                  value={formatCurrency(d.totalFaturaCartoes ?? 0)}
+                  subtitle="Ciclo atual"
+                  variant="violet"
+                  icon={CreditCard}
+                />
+              </div>
+              <div className="animate-card-enter opacity-0" style={{ animationDelay: "360ms" }}>
+                <BankCard
+                  title="Projeção Arcade (mês)"
+                  value={formatCurrency(d.projecaoArcadeMes)}
+                  subtitle={`Média diária: ${formatCurrency(d.mediaDiariaArcade)}`}
+                  variant="primary"
+                  icon={TrendingUp}
+                />
+              </div>
+              <div className="animate-card-enter opacity-0" style={{ animationDelay: "420ms" }}>
+                <BankCard
+                  title="Extra necessário"
+                  value={formatCurrency(d.extraNecessario)}
+                  subtitle="Para fechar no azul"
+                  variant={d.extraNecessario > 0 ? "warning" : "default"}
+                  icon={TrendingUp}
+                />
+              </div>
             </div>
 
             {d.chart && (
