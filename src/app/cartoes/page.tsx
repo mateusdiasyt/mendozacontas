@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { formatCurrency } from "@/lib/format";
 import Link from "next/link";
 import { CreditCard, ArrowLeft } from "lucide-react";
+import { CreditCardVisual, type LayoutCartao } from "@/components/ui/CreditCardVisual";
 
 type CartaoItem = {
   id: string;
@@ -12,6 +12,7 @@ type CartaoItem = {
   limite: number;
   fechamento: number;
   vencimento: number;
+  layout?: LayoutCartao;
   contexto: string;
   totalLancamentos: number;
 };
@@ -27,6 +28,7 @@ export default function CartoesPage() {
     limite: "",
     fechamento: "10",
     vencimento: "15",
+    layout: "GENERICO" as LayoutCartao,
     contexto: "PESSOAL" as "PESSOAL" | "ARCADE",
   });
 
@@ -73,6 +75,7 @@ export default function CartoesPage() {
         limite,
         fechamento: parseInt(form.fechamento, 10) || 10,
         vencimento: parseInt(form.vencimento, 10) || 15,
+        layout: form.layout,
         contexto: form.contexto,
       }),
     })
@@ -135,10 +138,29 @@ export default function CartoesPage() {
                 type="text"
                 value={form.nome}
                 onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                placeholder="Ex: Nubank, Itaú"
+                placeholder="Ex: Nubank, Itaú, Riachuelo"
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                 required
               />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-600">Aparência</label>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {(["GENERICO", "NUBANK", "ITAU"] as const).map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    onClick={() => setForm({ ...form, layout: l })}
+                    className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                      form.layout === l
+                        ? "border-violet-500 bg-violet-50 text-violet-700"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {l === "NUBANK" ? "Nubank" : l === "ITAU" ? "Itaú" : "Genérico"}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
               <label className="block text-sm text-slate-600">Limite (R$) *</label>
@@ -220,18 +242,22 @@ export default function CartoesPage() {
             Nenhum cartão cadastrado. Use o formulário acima para adicionar.
           </p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {list.map((c) => (
               <Link
                 key={c.id}
                 href={`/cartoes/${c.id}`}
-                className="rounded-2xl border border-slate-100 shadow-card bg-white p-5 shadow-sm transition hover:border-violet-200 hover:shadow"
+                className="group block transition hover:scale-[1.02]"
               >
-                <p className="font-medium text-slate-800">{c.nome}</p>
-                <p className="mt-1 text-sm text-slate-600">
-                  Limite: {formatCurrency(c.limite)} · Fecha dia {c.fechamento} · Vence dia {c.vencimento}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">{c.contexto}</p>
+                <CreditCardVisual
+                  nome={c.nome}
+                  limite={c.limite}
+                  fechamento={c.fechamento}
+                  vencimento={c.vencimento}
+                  layout={c.layout ?? "GENERICO"}
+                  contexto={c.contexto}
+                  className="shadow-lg transition group-hover:shadow-xl"
+                />
               </Link>
             ))}
           </div>

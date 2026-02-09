@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import type { Contexto } from "@prisma/client";
+import type { Contexto, LayoutCartao } from "@prisma/client";
 
 export async function GET(request: Request) {
   const user = await getUserFromToken(request.headers.get("authorization") ?? null);
@@ -26,6 +26,7 @@ export async function GET(request: Request) {
       limite: Number(c.limite),
       fechamento: c.fechamento,
       vencimento: c.vencimento,
+      layout: c.layout,
       contexto: c.contexto,
       totalLancamentos: c._count.lancamentos,
     }))
@@ -38,12 +39,13 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { nome, limite, fechamento, vencimento, contexto } = body as {
+    const { nome, limite, fechamento, vencimento, contexto, layout } = body as {
       nome?: string;
       limite?: number;
       fechamento?: number;
       vencimento?: number;
       contexto?: Contexto;
+      layout?: LayoutCartao;
     };
 
     if (!nome?.trim()) {
@@ -57,6 +59,7 @@ export async function POST(request: Request) {
     if (contexto !== "PESSOAL" && contexto !== "ARCADE") {
       return NextResponse.json({ error: "Contexto deve ser PESSOAL ou ARCADE" }, { status: 400 });
     }
+    const layoutVal = ["NUBANK", "ITAU", "GENERICO"].includes(layout ?? "") ? layout : "GENERICO";
 
     const cartao = await prisma.cartao.create({
       data: {
@@ -65,6 +68,7 @@ export async function POST(request: Request) {
         limite: Number(limite),
         fechamento: fech,
         vencimento: venc,
+        layout: layoutVal as LayoutCartao,
         contexto,
       },
     });
@@ -75,6 +79,7 @@ export async function POST(request: Request) {
       limite: Number(cartao.limite),
       fechamento: cartao.fechamento,
       vencimento: cartao.vencimento,
+      layout: cartao.layout,
       contexto: cartao.contexto,
     });
   } catch (e) {

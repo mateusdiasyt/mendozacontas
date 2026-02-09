@@ -34,6 +34,7 @@ export async function GET(
     limite: Number(cartao.limite),
     fechamento: cartao.fechamento,
     vencimento: cartao.vencimento,
+    layout: cartao.layout,
     contexto: cartao.contexto,
     ciclo: { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) },
     faturaAtual: faturaCiclo,

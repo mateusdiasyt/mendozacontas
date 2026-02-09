@@ -93,18 +93,25 @@ model Despesa {
 // ========== CARTÕES DE CRÉDITO ==========
 // Fatura = soma dos lançamentos do ciclo (fechamento → vencimento).
 
+enum LayoutCartao {
+  GENERICO
+  NUBANK
+  ITAU
+}
+
 model Cartao {
-  id          String    @id @default(cuid())
+  id          String        @id @default(cuid())
   nome        String
-  limite      Decimal   @db.Decimal(12, 2)
-  fechamento  Int       // dia do mês 1-31
-  vencimento  Int       // dia do mês 1-31
+  limite      Decimal       @db.Decimal(12, 2)
+  fechamento  Int           // dia do mês 1-31
+  vencimento  Int           // dia do mês 1-31
+  layout      LayoutCartao  @default(GENERICO)
   contexto    Contexto
   userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   lancamentos LancamentoCartao[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@index([userId, contexto])
 }
