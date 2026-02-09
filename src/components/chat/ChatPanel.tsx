@@ -77,11 +77,13 @@ export function ChatPanel() {
 
   return (
     <>
-      <div className="fixed bottom-6 left-6 z-40 flex items-end gap-0">
+      <div className="fixed bottom-6 right-6 z-40 flex items-end gap-0">
         {!bubbleClosed && (
-          <div className="relative mr-2 flex max-w-[min(320px,calc(100vw-6rem)] items-center overflow-x-auto rounded-2xl rounded-bl-sm bg-white py-2.5 pl-3 pr-9 shadow-lg ring-1 ring-slate-200">
-            <p className="whitespace-nowrap text-sm text-slate-700">
-              Miau, vamo ver nossas continhas pra comprar minha raçãozinha?
+          <div className="relative mr-2 flex max-w-[240px] flex-col rounded-2xl rounded-br-sm bg-white py-2.5 pl-3 pr-9 shadow-lg ring-1 ring-slate-200">
+            <p className="text-sm leading-snug text-slate-700">
+              Miau, vamo ver nossas continhas
+              <br />
+              pra comprar minha raçãozinha?
             </p>
             <button
               type="button"
