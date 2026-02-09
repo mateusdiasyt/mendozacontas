@@ -6,13 +6,23 @@ import { Send, X } from "lucide-react";
 
 type Message = { role: "user" | "assistant"; text: string };
 
+const BUBBLE_STORAGE_KEY = "mendozacontas_tanjiro_bubble_closed";
+
 export function ChatPanel() {
   const [token, setToken] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [bubbleClosed, setBubbleClosed] = useState(false);
 
   useEffect(() => {
     setToken(typeof window !== "undefined" ? localStorage.getItem("mendozacontas_token") : null);
+    setBubbleClosed(typeof window !== "undefined" ? localStorage.getItem(BUBBLE_STORAGE_KEY) === "1" : false);
   }, []);
+
+  function closeBubble() {
+    setBubbleClosed(true);
+    if (typeof window !== "undefined") localStorage.setItem(BUBBLE_STORAGE_KEY, "1");
+  }
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -67,14 +77,26 @@ export function ChatPanel() {
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-40 group">
-        <div className="pointer-events-none absolute bottom-0 right-full mr-3 hidden max-w-[220px] rounded-xl rounded-br-sm bg-white px-3 py-2 text-right text-sm text-slate-700 shadow-lg ring-1 ring-slate-200 sm:block opacity-0 transition-opacity group-hover:opacity-100">
-          Miau, vamo ver nossas continhas pra comprar minha raçãozinha?
-        </div>
+      <div className="fixed bottom-6 left-6 z-40 flex items-end gap-0">
+        {!bubbleClosed && (
+          <div className="relative mr-2 flex max-w-[min(320px,calc(100vw-6rem)] items-center overflow-x-auto rounded-2xl rounded-bl-sm bg-white py-2.5 pl-3 pr-9 shadow-lg ring-1 ring-slate-200">
+            <p className="whitespace-nowrap text-sm text-slate-700">
+              Miau, vamo ver nossas continhas pra comprar minha raçãozinha?
+            </p>
+            <button
+              type="button"
+              onClick={closeBubble}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              aria-label="Fechar mensagem"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full ring-4 ring-white shadow-lg transition hover:scale-105 hover:shadow-xl"
+          className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full ring-4 ring-white shadow-lg transition hover:scale-105 hover:shadow-xl"
           aria-label="Abrir chat com Tanjiro"
           title="Miau, vamo ver nossas continhas pra comprar minha raçãozinha?"
         >
