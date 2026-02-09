@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, Send, X, Bot } from "lucide-react";
+import Image from "next/image";
+import { MessageCircle, Send, X } from "lucide-react";
 
 type Message = { role: "user" | "assistant"; text: string };
 
@@ -85,7 +86,13 @@ export function ChatPanel() {
           <div className="fixed bottom-0 right-0 z-50 flex h-[85vh] max-h-[600px] w-full max-w-md flex-col rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:bottom-6 sm:right-6 sm:h-[500px] sm:rounded-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
               <span className="flex items-center gap-2 font-semibold text-slate-800">
-                <Bot className="h-5 w-5 text-[var(--primary)]" />
+                <Image
+                  src="/tanjiro-avatar.png"
+                  alt="Tanjiro"
+                  width={36}
+                  height={36}
+                  className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-slate-100"
+                />
                 Tanjiro
               </span>
               <button
@@ -102,7 +109,10 @@ export function ChatPanel() {
             </p>
             <div
               ref={listRef}
-              className="flex-1 overflow-y-auto px-4 py-3 space-y-3"
+              className="relative flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-cover bg-center bg-no-repeat"
+              style={{
+                backgroundImage: "linear-gradient(rgba(255,255,255,0.88), rgba(255,255,255,0.88)), url(/tanjiro-chat-bg.png)",
+              }}
             >
               {messages.length === 0 && (
                 <p className="text-sm text-slate-400">
@@ -112,8 +122,17 @@ export function ChatPanel() {
               {messages.map((msg, i) => (
                 <div
                   key={i}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
+                  {msg.role === "assistant" && (
+                    <Image
+                      src="/tanjiro-avatar.png"
+                      alt=""
+                      width={28}
+                      height={28}
+                      className="mt-1 h-7 w-7 shrink-0 rounded-full object-cover"
+                    />
+                  )}
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
                       msg.role === "user"
@@ -147,7 +166,14 @@ export function ChatPanel() {
                 </div>
               ))}
               {loading && (
-                <div className="flex justify-start">
+                <div className="flex gap-2 justify-start">
+                  <Image
+                    src="/tanjiro-avatar.png"
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="mt-1 h-7 w-7 shrink-0 rounded-full object-cover"
+                  />
                   <div className="rounded-2xl bg-slate-100 px-4 py-2.5 text-sm text-slate-500">
                     Processando…
                   </div>
