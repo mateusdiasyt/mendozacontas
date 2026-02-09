@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { MessageCircle, Send, X } from "lucide-react";
+import { Send, X } from "lucide-react";
 
 type Message = { role: "user" | "assistant"; text: string };
 
@@ -67,14 +67,26 @@ export function ChatPanel() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-lg transition hover:bg-[var(--primary-hover)]"
-        aria-label="Abrir chat com IA"
-      >
-        <MessageCircle className="h-6 w-6" />
-      </button>
+      <div className="fixed bottom-6 right-6 z-40 group">
+        <div className="pointer-events-none absolute bottom-0 right-full mr-3 hidden max-w-[220px] rounded-xl rounded-br-sm bg-white px-3 py-2 text-right text-sm text-slate-700 shadow-lg ring-1 ring-slate-200 sm:block opacity-0 transition-opacity group-hover:opacity-100">
+          Miau, vamo ver nossas continhas pra comprar minha raçãozinha?
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full ring-4 ring-white shadow-lg transition hover:scale-105 hover:shadow-xl"
+          aria-label="Abrir chat com Tanjiro"
+          title="Miau, vamo ver nossas continhas pra comprar minha raçãozinha?"
+        >
+          <Image
+            src="/tanjiro-avatar.png"
+            alt="Tanjiro"
+            width={56}
+            height={56}
+            className="h-14 w-14 object-cover"
+          />
+        </button>
+      </div>
 
       {open && (
         <>
