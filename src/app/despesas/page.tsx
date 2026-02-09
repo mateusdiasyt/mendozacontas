@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/format";
 import { CATEGORIAS_DESPESA } from "@/lib/categorias";
 import { buildContextoOptions, PESSOAL_ID } from "@/lib/contexto";
 import Link from "next/link";
-import { TrendingDown, ArrowLeft, Repeat } from "lucide-react";
+import { TrendingDown, ArrowLeft, Repeat, Pencil, Trash2 } from "lucide-react";
 
 type DespesaItem = {
   id: string;
@@ -36,7 +36,19 @@ export default function DespesasPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [filtroContexto, setFiltroContexto] = useState<string>(""); // "" = Todas
+  const [filtroContexto, setFiltroContexto] = useState<string>("");
+  const [editing, setEditing] = useState<DespesaItem | null>(null);
+  const [editForm, setEditForm] = useState({
+    descricao: "",
+    valor: "",
+    categoria: "Outros" as string,
+    data: "",
+    formaPagamento: "PIX" as "PIX" | "DINHEIRO" | "CARTAO",
+    contexto: PESSOAL_ID,
+    recorrente: false,
+    parcelas: "1",
+    parcelaAtual: "1",
+  });
   const [form, setForm] = useState({
     descricao: "",
     valor: "",
@@ -81,6 +93,75 @@ export default function DespesasPage() {
     fetch("/api/despesas", { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => setList(Array.isArray(data) ? data : []));
+  }
+
+  function openEdit(d: DespesaItem) {
+    setError("");
+    setEditing(d);
+    setEditForm({
+      descricao: d.descricao,
+      valor: String(d.valor),
+      categoria: d.categoria,
+      data: d.data,
+      formaPagamento: d.formaPagamento as "PIX" | "DINHEIRO" | "CARTAO",
+      contexto: d.contexto,
+      recorrente: d.recorrente,
+      parcelas: String(d.parcelas),
+      parcelaAtual: String(d.parcelaAtual),
+    });
+  }
+
+  function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !editing) return;
+    setError("");
+    const valor = parseFloat(editForm.valor.replace(",", "."));
+    if (!editForm.descricao.trim() || isNaN(valor) || valor <= 0 || !editForm.categoria.trim()) {
+      setError("Preencha descrição, valor e categoria.");
+      return;
+    }
+    setSaving(true);
+    fetch(`/api/despesas/${editing.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        descricao: editForm.descricao.trim(),
+        valor,
+        categoria: editForm.categoria.trim(),
+        data: editForm.data,
+        formaPagamento: editForm.formaPagamento,
+        contexto: editForm.contexto,
+        recorrente: editForm.recorrente,
+        parcelas: parseInt(editForm.parcelas, 10) || 1,
+        parcelaAtual: parseInt(editForm.parcelaAtual, 10) || 1,
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => Promise.reject(new Error(d.error ?? "Erro")));
+        return res.json();
+      })
+      .then(() => {
+        setEditing(null);
+        loadList();
+      })
+      .catch((err) => setError(err.message ?? "Erro ao salvar"))
+      .finally(() => setSaving(false));
+  }
+
+  function handleDelete(d: DespesaItem) {
+    if (!token || !confirm(`Excluir a despesa "${d.descricao}" de ${formatCurrency(d.valor)}?`)) return;
+    fetch(`/api/despesas/${d.id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) return res.json().then((data) => Promise.reject(new Error(data.error ?? "Erro")));
+        loadList();
+      })
+      .catch((err) => alert(err.message ?? "Erro ao excluir"));
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -402,6 +483,7 @@ export default function DespesasPage() {
                         <th className="p-3 font-medium text-slate-600">Contexto</th>
                       )}
                       <th className="p-3 text-right font-medium text-slate-600">Valor</th>
+                      <th className="w-20 p-3 font-medium text-slate-600">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -435,6 +517,26 @@ export default function DespesasPage() {
                         <td className="p-3 text-right font-medium text-rose-600">
                           {formatCurrency(d.valor)}
                         </td>
+                        <td className="p-3">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openEdit(d)}
+                              className="rounded-lg p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                              title="Editar"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(d)}
+                              className="rounded-lg p-2 text-slate-500 hover:bg-red-100 hover:text-red-600"
+                              title="Excluir"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -443,6 +545,152 @@ export default function DespesasPage() {
             );
           })()}
         </section>
+
+        {/* Modal Editar despesa */}
+        {editing && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={() => !saving && setEditing(null)}
+          >
+            <div
+              className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="mb-4 text-lg font-semibold text-slate-800">Editar despesa</h3>
+              {error && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-slate-600">Descrição *</label>
+                  <input
+                    type="text"
+                    value={editForm.descricao}
+                    onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-slate-600">Valor (R$) *</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={editForm.valor}
+                      onChange={(e) => setEditForm({ ...editForm, valor: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-600">Data *</label>
+                    <input
+                      type="date"
+                      value={editForm.data}
+                      onChange={(e) => setEditForm({ ...editForm, data: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-slate-600">Categoria</label>
+                    <select
+                      value={editForm.categoria}
+                      onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                      {CATEGORIAS_DESPESA.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-600">Forma</label>
+                    <select
+                      value={editForm.formaPagamento}
+                      onChange={(e) => setEditForm({ ...editForm, formaPagamento: e.target.value as "PIX" | "DINHEIRO" | "CARTAO" })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                      {FORMAS.map((f) => (
+                        <option key={f.value} value={f.value}>{f.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">Contexto</label>
+                  <div className="flex flex-wrap gap-1">
+                    {contextoOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, contexto: opt.value })}
+                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                          editForm.contexto === opt.value
+                            ? "bg-slate-800 text-white"
+                            : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={editForm.recorrente}
+                      onChange={(e) => setEditForm({ ...editForm, recorrente: e.target.checked })}
+                      className="rounded border-slate-300"
+                    />
+                    <span className="text-sm text-slate-600">Recorrente</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-600">Parcela</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={99}
+                      value={editForm.parcelaAtual}
+                      onChange={(e) => setEditForm({ ...editForm, parcelaAtual: e.target.value })}
+                      className="w-14 rounded-lg border border-slate-300 px-2 py-1.5 text-center text-sm"
+                    />
+                    <span className="text-slate-400">/</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={99}
+                      value={editForm.parcelas}
+                      onChange={(e) => setEditForm({ ...editForm, parcelas: e.target.value })}
+                      className="w-14 rounded-lg border border-slate-300 px-2 py-1.5 text-center text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditing(null)}
+                    disabled={saving}
+                    className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="rounded-xl bg-rose-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-rose-600 disabled:opacity-50"
+                  >
+                    {saving ? "Salvando…" : "Salvar"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
