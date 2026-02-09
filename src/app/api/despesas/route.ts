@@ -38,6 +38,8 @@ export async function GET(request: Request) {
       formaPagamento: d.formaPagamento,
       contexto: d.contexto,
       recorrente: d.recorrente,
+      parcelas: d.parcelas,
+      parcelaAtual: d.parcelaAtual,
     }))
   );
 }
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { descricao, valor, categoria, data, formaPagamento, contexto, recorrente } = body as {
+    const { descricao, valor, categoria, data, formaPagamento, contexto, recorrente, parcelas, parcelaAtual } = body as {
       descricao?: string;
       valor?: number;
       categoria?: string;
@@ -56,6 +58,8 @@ export async function POST(request: Request) {
       formaPagamento?: FormaPagamento;
       contexto?: Contexto;
       recorrente?: boolean;
+      parcelas?: number;
+      parcelaAtual?: number;
     };
 
     if (!descricao?.trim() || valor == null || !categoria?.trim() || !data?.trim()) {
@@ -71,6 +75,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Contexto deve ser PESSOAL ou ARCADE" }, { status: 400 });
     }
 
+    const parcelasNum = Math.max(1, Math.min(99, Number(parcelas) || 1));
+    const parcelaAtualNum = Math.max(1, Math.min(parcelasNum, Number(parcelaAtual) || 1));
+
     const despesa = await prisma.despesa.create({
       data: {
         userId: user.id,
@@ -81,6 +88,8 @@ export async function POST(request: Request) {
         formaPagamento: formaPagamento as FormaPagamento,
         contexto,
         recorrente: Boolean(recorrente),
+        parcelas: parcelasNum,
+        parcelaAtual: parcelaAtualNum,
       },
     });
 
@@ -93,6 +102,8 @@ export async function POST(request: Request) {
       formaPagamento: despesa.formaPagamento,
       contexto: despesa.contexto,
       recorrente: despesa.recorrente,
+      parcelas: despesa.parcelas,
+      parcelaAtual: despesa.parcelaAtual,
     });
   } catch (e) {
     console.error("Despesas POST error:", e);

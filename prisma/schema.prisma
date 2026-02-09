@@ -80,6 +80,8 @@ model Despesa {
   formaPagamento  FormaPagamento
   contexto        Contexto
   recorrente      Boolean        @default(false)
+  parcelas       Int            @default(1)  // total de parcelas (ex.: 3)
+  parcelaAtual    Int            @default(1) // qual parcela é esta (ex.: 2 = 2ª de 3)
   userId          String
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   repasseId       String?        @unique

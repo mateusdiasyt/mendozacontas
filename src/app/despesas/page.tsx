@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { formatCurrency } from "@/lib/format";
 import Link from "next/link";
-import { TrendingDown, ArrowLeft } from "lucide-react";
+import { TrendingDown, ArrowLeft, Repeat } from "lucide-react";
 
 type DespesaItem = {
   id: string;
@@ -15,6 +15,8 @@ type DespesaItem = {
   formaPagamento: string;
   contexto: string;
   recorrente: boolean;
+  parcelas: number;
+  parcelaAtual: number;
 };
 
 const FORMAS = [
@@ -37,6 +39,8 @@ export default function DespesasPage() {
     formaPagamento: "PIX" as "PIX" | "DINHEIRO" | "CARTAO",
     contexto: "PESSOAL" as "PESSOAL" | "ARCADE",
     recorrente: false,
+    parcelas: "1",
+    parcelaAtual: "1",
   });
 
   useEffect(() => {
@@ -77,7 +81,7 @@ export default function DespesasPage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
+        body: JSON.stringify({
         descricao: form.descricao.trim(),
         valor,
         categoria: form.categoria.trim(),
@@ -85,6 +89,8 @@ export default function DespesasPage() {
         formaPagamento: form.formaPagamento,
         contexto: form.contexto,
         recorrente: form.recorrente,
+        parcelas: parseInt(form.parcelas, 10) || 1,
+        parcelaAtual: parseInt(form.parcelaAtual, 10) || 1,
       }),
     })
       .then((res) => {
@@ -233,17 +239,41 @@ export default function DespesasPage() {
                 </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:col-span-2">
-              <input
-                type="checkbox"
-                id="recorrente"
-                checked={form.recorrente}
-                onChange={(e) => setForm({ ...form, recorrente: e.target.checked })}
-                className="rounded border-slate-300"
-              />
-              <label htmlFor="recorrente" className="text-sm text-slate-600">
-                Despesa recorrente
-              </label>
+            <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="recorrente"
+                  checked={form.recorrente}
+                  onChange={(e) => setForm({ ...form, recorrente: e.target.checked })}
+                  className="rounded border-slate-300"
+                />
+                <label htmlFor="recorrente" className="text-sm text-slate-600">
+                  Despesa recorrente
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-slate-600">Parcela</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={form.parcelaAtual}
+                  onChange={(e) => setForm({ ...form, parcelaAtual: e.target.value })}
+                  className="w-14 rounded-lg border border-slate-300 px-2 py-1.5 text-center text-sm"
+                  title="Parcela atual"
+                />
+                <span className="text-slate-400">/</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={form.parcelas}
+                  onChange={(e) => setForm({ ...form, parcelas: e.target.value })}
+                  className="w-14 rounded-lg border border-slate-300 px-2 py-1.5 text-center text-sm"
+                  title="Total de parcelas"
+                />
+              </div>
             </div>
             <div className="flex items-end">
               <button
@@ -269,6 +299,8 @@ export default function DespesasPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
+                  <th className="w-10 p-3 font-medium" title="Recorrente">Rec.</th>
+                  <th className="w-12 p-3 font-medium" title="Parcela">Parc.</th>
                   <th className="p-3 font-medium">Data</th>
                   <th className="p-3 font-medium">Descrição</th>
                   <th className="p-3 font-medium">Categoria</th>
@@ -280,6 +312,22 @@ export default function DespesasPage() {
               <tbody>
                 {list.map((d) => (
                   <tr key={d.id} className="border-b border-slate-100 last:border-0">
+                    <td className="p-3">
+                      {d.recorrente ? (
+                        <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-violet-700" title="Despesa recorrente">
+                          <Repeat className="h-3.5 w-3.5" />
+                        </span>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      {d.parcelas > 1 ? (
+                        <span className="text-slate-600">{d.parcelaAtual}/{d.parcelas}</span>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
+                    </td>
                     <td className="p-3 text-slate-600">{d.data}</td>
                     <td className="p-3">{d.descricao}</td>
                     <td className="p-3 text-slate-600">{d.categoria}</td>
