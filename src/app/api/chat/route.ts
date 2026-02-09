@@ -5,7 +5,7 @@ import type { Contexto, FormaPagamento } from "@prisma/client";
 import { startOfMonth, endOfMonth } from "date-fns";
 
 const GEMINI_KEY = "gemini_api_key";
-const MODEL = "gemini-1.5-flash";
+const MODEL = "gemini-2.0-flash";
 
 const SYSTEM_PROMPT = `Você é um assistente financeiro do MendozaContas. Você pode fazer DUAS coisas:
 
