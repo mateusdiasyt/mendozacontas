@@ -31,6 +31,7 @@ export default function CartaoDetailPage() {
   const router = useRouter();
   const id = params.id as string;
   const [token, setToken] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [cartao, setCartao] = useState<CartaoDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,7 +45,9 @@ export default function CartaoDetailPage() {
   });
 
   useEffect(() => {
-    setToken(typeof window !== "undefined" ? localStorage.getItem("mendozacontas_token") : null);
+    const t = typeof window !== "undefined" ? localStorage.getItem("mendozacontas_token") : null;
+    setToken(t);
+    setAuthChecked(true);
   }, []);
 
   useEffect(() => {
@@ -102,6 +105,14 @@ export default function CartaoDetailPage() {
       })
       .catch((err) => setError(err.message ?? "Erro ao salvar"))
       .finally(() => setSaving(false));
+  }
+
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface-app">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+      </div>
+    );
   }
 
   if (!token) {
