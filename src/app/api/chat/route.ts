@@ -2,31 +2,29 @@ import { NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import type { Contexto, FormaPagamento } from "@prisma/client";
-import { startOfMonth, endOfMonth } from "date-fns";
+import { startOfMonth, endOfMonth, subDays } from "date-fns";
 
 const GEMINI_KEY = "gemini_api_key";
 const MODEL = "gemini-2.0-flash";
 
-const SYSTEM_PROMPT = `Você é um assistente financeiro do MendozaContas. Você pode fazer DUAS coisas:
+const SYSTEM_PROMPT = `Você é o Tanjiro, especialista em controle financeiro pessoal e empresarial no app MendozaContas. Seu papel é ser copiloto financeiro e estrategista: calmo, direto, protetor, analítico e honesto. Você não julga, mas alerta com firmeza quando algo coloca a estabilidade financeira em risco.
 
-1) REGISTRAR DESPESAS: Se o usuário descrever gastos ou receitas em texto (ex.: "ontem gastei 200 reais pessoal", "pagamos o Pedro 91 do Arcade"), extraia cada item e coloque no array "expenses". Cada objeto no array:
-- "tipo": "despesa" ou "receita"
-- "descricao": string curta
-- "valor": número positivo
-- "data": "YYYY-MM-DD" (hoje/ontem conforme as datas fornecidas)
-- "contexto": "PESSOAL" ou "ARCADE"
-- "categoria": string em português (ex.: "Alimentação", "Outros")
-- "formaPagamento": "PIX" ou "DINHEIRO" ou "CARTAO"
-Se não houver nenhum gasto/receita na mensagem, use "expenses": [].
+MISSÃO: Ajudar a manter o dinheiro organizado, evitar decisões impulsivas, prever riscos, planejar com segurança e tomar decisões conscientes. Sempre analise dados reais; priorize segurança antes de conforto; incentive reservas e planejamento. Nunca misture dinheiro PESSOAL com ARCADE; sempre respeite os dois contextos.
 
-2) RESPONDER PERGUNTAS: Você receberá um bloco "Dados financeiros do usuário" com números atuais (saldo, status, quanto gastou no mês, extra necessário para sair do negativo, etc.). Se o usuário perguntar coisas como "quanto gastei no mês?", "quanto falta pra sair do crítico?", "qual meu saldo?", "quanto posso gastar?", responda em português de forma clara e breve usando ESSES dados. Coloque a resposta no campo "reply".
+TOM: Claro, objetivo, humano e acessível. Fale como mentor, não como robô. Sem jargão desnecessário. Exemplos: "No ritmo atual, isso pode virar um problema." / "Você está seguro para gastar até este valor." / "Se quiser manter esse plano, será necessário ajustar algo." Em situações críticas: seja firme, mostre números, explique consequências e sugira ações claras. Em situações positivas: reforce boas decisões e mostre margem de segurança. Frase que pode usar quando fizer sentido: "Decisões conscientes hoje evitam problemas amanhã."
 
-SEMPRE responda com um ÚNICO JSON válido, sem texto antes ou depois, neste formato:
-{"expenses": [ array de despesas/receitas ou vazio ], "reply": "sua resposta em português"}
+TAREFAS TÉCNICAS (obrigatório retornar JSON):
 
-- Se o usuário só registrou despesas: reply pode ser um resumo do que foi registrado.
-- Se o usuário só fez pergunta: use os dados financeiros para responder em "reply"; expenses = [].
-- Se fez os dois: preencha expenses e reply.`;
+1) REGISTRAR DESPESAS: Se o usuário descrever gastos/receitas (ex.: "ontem gastei 200 reais pessoal", "pagamos o Pedro 91 do Arcade"), extraia cada item no array "expenses". Cada objeto: tipo (despesa/receita), descricao, valor, data (YYYY-MM-DD), contexto (PESSOAL/ARCADE), categoria, formaPagamento (PIX/DINHEIRO/CARTAO). Se não houver nada a registrar: "expenses": [].
+
+2) REMOVER DESPESAS: Se pedir REMOVER, APAGAR, EXCLUIR, TIRAR ou DELETAR (ex.: "remova os 100 reais de gasto em flor"), NÃO coloque em expenses. Use "deletions": [ { "descricaoContem": "palavra que identifica a despesa (ex.: flor, mercado)", "valor": número se informado ou omita } ], "expenses": []. Se não for pedido de remoção: "deletions": [].
+
+3) RESPONDER: Use o bloco "Dados financeiros do usuário" para responder perguntas (quanto gastei?, quanto falta sair do crítico?, qual meu saldo?). Escreva "reply" SEMPRE no tom do Tanjiro: direto, útil, com números quando fizer sentido.
+
+FORMATO DE RESPOSTA (obrigatório): um único JSON, sem texto antes ou depois:
+{"expenses": [ ... ou [] ], "deletions": [ ... ou [] ], "reply": "sua resposta em português, no tom do Tanjiro"}`;
+
+type DeletionCriteria = { descricaoContem?: string; valor?: number };
 
 function parseGeminiResponse(text: string): {
   expenses: Array<{
@@ -38,6 +36,7 @@ function parseGeminiResponse(text: string): {
     categoria: string;
     formaPagamento: string;
   }>;
+  deletions: DeletionCriteria[];
   reply: string;
 } {
   const trimmed = text.trim();
@@ -46,16 +45,21 @@ function parseGeminiResponse(text: string): {
   if (codeMatch) jsonStr = codeMatch[1].trim();
   const parsed = JSON.parse(jsonStr) as unknown;
   if (!parsed || typeof parsed !== "object" || !("reply" in parsed)) {
-    return { expenses: [], reply: "Não consegui processar. Tente de novo." };
+    return { expenses: [], deletions: [], reply: "Não consegui processar. Tente de novo." };
   }
-  const obj = parsed as { expenses?: unknown; reply?: string };
+  const obj = parsed as { expenses?: unknown; deletions?: unknown; reply?: string };
   const reply = typeof obj.reply === "string" ? obj.reply : "Pronto.";
   const arr = Array.isArray(obj.expenses) ? obj.expenses : [];
   const expenses = arr.filter(
     (x): x is { tipo: string; descricao: string; valor: number; data: string; contexto: string; categoria: string; formaPagamento: string } =>
       x && typeof x === "object" && (x.tipo === "despesa" || x.tipo === "receita") && typeof x.valor === "number" && typeof x.descricao === "string" && typeof x.data === "string"
   );
-  return { expenses, reply };
+  const delArr = Array.isArray(obj.deletions) ? obj.deletions : [];
+  const deletions = delArr.filter(
+    (x): x is DeletionCriteria =>
+      x && typeof x === "object" && (typeof (x as DeletionCriteria).descricaoContem === "string" || typeof (x as DeletionCriteria).valor === "number")
+  );
+  return { expenses, deletions, reply };
 }
 
 export async function POST(request: Request) {
@@ -161,7 +165,7 @@ ${message}`;
     );
   }
 
-  let parsed: { expenses: Array<{ tipo: string; descricao: string; valor: number; data: string; contexto: string; categoria: string; formaPagamento: string }>; reply: string };
+  let parsed: ReturnType<typeof parseGeminiResponse>;
   try {
     parsed = parseGeminiResponse(text);
   } catch (e) {
@@ -172,7 +176,7 @@ ${message}`;
     );
   }
 
-  const { expenses: items, reply: aiReply } = parsed;
+  const { expenses: items, deletions, reply: aiReply } = parsed;
   const created: Array<{ tipo: string; descricao: string; valor: number; data: string; contexto: string }> = [];
   const errors: string[] = [];
 
@@ -217,10 +221,41 @@ ${message}`;
     }
   }
 
-  const reply =
-    errors.length > 0
-      ? aiReply + "\n\nAlguns itens não puderam ser salvos: " + errors.join("; ")
-      : aiReply;
+  const deleted: string[] = [];
+  if (deletions.length > 0) {
+    const desde = subDays(now, 90);
+    const candidatas = await prisma.despesa.findMany({
+      where: { userId: user.id, data: { gte: desde } },
+      orderBy: { data: "desc" },
+      take: 200,
+    });
+    for (const crit of deletions) {
+      const desc = (crit.descricaoContem ?? "").trim().toLowerCase();
+      if (!desc) continue;
+      const match = candidatas.find(
+        (d) =>
+          d.descricao.toLowerCase().includes(desc) &&
+          (crit.valor == null || Number(d.valor) === Number(crit.valor))
+      );
+      if (match) {
+        try {
+          await prisma.despesa.delete({ where: { id: match.id } });
+          deleted.push(`${match.descricao} (R$ ${Number(match.valor).toFixed(2)})`);
+          candidatas.splice(candidatas.indexOf(match), 1);
+        } catch (e) {
+          console.error("Delete despesa error:", e);
+        }
+      }
+    }
+  }
+
+  let reply = aiReply;
+  if (deleted.length > 0) {
+    reply = `Removi a(s) despesa(s): ${deleted.join("; ")}.`;
+  }
+  if (errors.length > 0) {
+    reply = reply + "\n\nAlguns itens não puderam ser salvos: " + errors.join("; ");
+  }
 
   return NextResponse.json({
     reply,

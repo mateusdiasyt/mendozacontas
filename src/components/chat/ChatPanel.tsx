@@ -86,7 +86,7 @@ export function ChatPanel() {
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
               <span className="flex items-center gap-2 font-semibold text-slate-800">
                 <Bot className="h-5 w-5 text-[var(--primary)]" />
-                Assistente financeiro
+                Tanjiro
               </span>
               <button
                 type="button"
