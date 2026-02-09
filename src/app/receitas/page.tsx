@@ -148,81 +148,108 @@ export default function ReceitasPage() {
               {error}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Descrição *</label>
-              <input
-                type="text"
-                value={form.descricao}
-                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
-                required
-              />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600">Descrição *</label>
+                <input
+                  type="text"
+                  value={form.descricao}
+                  onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-slate-900 transition placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400/20"
+                  placeholder="Ex: Freela site"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600">Valor (R$) *</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={form.valor}
+                  onChange={(e) => setForm({ ...form, valor: e.target.value })}
+                  placeholder="0,00"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-slate-900 transition placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400/20"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600">Data *</label>
+                <input
+                  type="date"
+                  value={form.data}
+                  onChange={(e) => setForm({ ...form, data: e.target.value })}
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-slate-900 transition focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400/20"
+                />
+              </div>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-slate-700">Valor (R$) *</label>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={form.valor}
-                onChange={(e) => setForm({ ...form, valor: e.target.value })}
-                placeholder="0,00"
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Data *</label>
-              <input
-                type="date"
-                value={form.data}
-                onChange={(e) => setForm({ ...form, data: e.target.value })}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Tipo</label>
-              <select
-                value={form.tipo}
-                onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
-              >
+              <label className="block text-sm font-medium text-slate-600 mb-2">Tipo</label>
+              <div className="flex flex-wrap gap-2">
                 {TIPOS.map((t) => (
-                  <option key={t.value} value={t.value}>
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, tipo: t.value })}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                      form.tipo === t.value
+                        ? "bg-emerald-500 text-white shadow-sm"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
                     {t.label}
-                  </option>
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-slate-700">Contexto</label>
-              <select
-                value={form.contexto}
-                onChange={(e) => setForm({ ...form, contexto: e.target.value as "PESSOAL" | "ARCADE" })}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
-              >
-                <option value="PESSOAL">Pessoal</option>
-                <option value="ARCADE">Arcade</option>
-              </select>
+              <label className="block text-sm font-medium text-slate-600 mb-2">Contexto</label>
+              <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50/80 p-1">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, contexto: "PESSOAL" })}
+                  className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${
+                    form.contexto === "PESSOAL"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Pessoal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, contexto: "ARCADE" })}
+                  className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${
+                    form.contexto === "ARCADE"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Arcade
+                </button>
+              </div>
             </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-slate-700">Observação</label>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-600">Observação</label>
               <input
                 type="text"
                 value={form.observacao}
                 onChange={(e) => setForm({ ...form, observacao: e.target.value })}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
+                placeholder="Opcional"
+                className="mt-1.5 w-full max-w-md rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-slate-900 transition placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400/20"
               />
             </div>
-            <div className="flex items-end">
-              <button
-                type="submit"
-                disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-emerald-600 disabled:opacity-50"
-              >
-                <Plus className="h-4 w-4" />
-                {saving ? "Salvando…" : "Adicionar receita"}
-              </button>
-            </div>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 font-medium text-white shadow-sm hover:bg-emerald-600 disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" />
+              {saving ? "Salvando…" : "Adicionar receita"}
+            </button>
           </form>
         </div>
 

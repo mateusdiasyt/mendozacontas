@@ -206,15 +206,31 @@ export default function DespesasPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-slate-600">Contexto</label>
-              <select
-                value={form.contexto}
-                onChange={(e) => setForm({ ...form, contexto: e.target.value as "PESSOAL" | "ARCADE" })}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-              >
-                <option value="PESSOAL">Pessoal</option>
-                <option value="ARCADE">Arcade</option>
-              </select>
+              <label className="block text-sm font-medium text-slate-600 mb-2">Contexto</label>
+              <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50/80 p-1">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, contexto: "PESSOAL" })}
+                  className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${
+                    form.contexto === "PESSOAL"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Pessoal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, contexto: "ARCADE" })}
+                  className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${
+                    form.contexto === "ARCADE"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Arcade
+                </button>
+              </div>
             </div>
             <div className="flex items-center gap-2 sm:col-span-2">
               <input
@@ -232,7 +248,7 @@ export default function DespesasPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-rose-600 px-4 py-2 font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-5 py-3 font-medium text-white shadow-sm hover:bg-rose-600 disabled:opacity-50"
               >
                 {saving ? "Salvando…" : "Adicionar despesa"}
               </button>
