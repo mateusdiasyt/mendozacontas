@@ -15,6 +15,8 @@ type DashboardData = {
   projecaoFechamentoPessoal: number;
   status: "OK" | "ATENCAO" | "CRITICO";
   extraNecessario: number;
+  totalFaturaCartoes?: number;
+  quantoPodeGastar?: number;
   contexto: string;
   periodo: { diasNoMes: number; diaAtual: number };
 };
@@ -27,6 +29,8 @@ const defaultData: DashboardData = {
   projecaoFechamentoPessoal: 0,
   status: "OK",
   extraNecessario: 0,
+  totalFaturaCartoes: 0,
+  quantoPodeGastar: 0,
   contexto: "PESSOAL",
   periodo: { diasNoMes: 30, diaAtual: 1 },
 };
@@ -102,6 +106,18 @@ export default function DashboardPage() {
             >
               + Despesa
             </Link>
+            <Link
+              href="/cartoes"
+              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
+            >
+              Cartões
+            </Link>
+            <Link
+              href="/repasse"
+              className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+            >
+              Repasse
+            </Link>
           </div>
         )}
         {!token && (
@@ -165,6 +181,18 @@ export default function DashboardPage() {
               value={formatCurrency(d.extraNecessario)}
               subtitle="Valor em extras para fechar no azul"
               variant={d.extraNecessario > 0 ? "warning" : "default"}
+            />
+            <DashboardCard
+              title="Quanto pode gastar"
+              value={formatCurrency(d.quantoPodeGastar ?? 0)}
+              subtitle="Projeção menos faturas de cartão (margem livre)"
+              variant={(d.quantoPodeGastar ?? 0) > 0 ? "success" : "default"}
+            />
+            <DashboardCard
+              title="Fatura dos cartões"
+              value={formatCurrency(d.totalFaturaCartoes ?? 0)}
+              subtitle="Total das faturas no ciclo atual"
+              variant="default"
             />
           </div>
         )}

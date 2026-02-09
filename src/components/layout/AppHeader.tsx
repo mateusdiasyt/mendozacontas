@@ -29,6 +29,18 @@ export function AppHeader({ token, onLogout }: Props) {
               >
                 Despesas
               </Link>
+              <Link
+                href="/cartoes"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900"
+              >
+                Cartões
+              </Link>
+              <Link
+                href="/repasse"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900"
+              >
+                Repasse
+              </Link>
             </>
           )}
         </nav>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getCicloFatura } from "@/lib/cartao";
 import type { Contexto } from "@prisma/client";
 import { startOfMonth, endOfMonth, subMonths, differenceInDays, lastDayOfMonth } from "date-fns";
 
@@ -90,6 +91,21 @@ export async function GET(request: Request) {
     // Extra necessário para fechar no azul (se negativo)
     const extraNecessario = projecaoFechamentoPessoal >= 0 ? 0 : Math.abs(projecaoFechamentoPessoal);
 
+    // Fatura dos cartões (ciclo atual de cada cartão)
+    const cartoes = await prisma.cartao.findMany({ where: { userId: user.id } });
+    let totalFaturaCartoes = 0;
+    for (const c of cartoes) {
+      const { start, end } = getCicloFatura(c.fechamento, now);
+      const sum = await prisma.lancamentoCartao.aggregate({
+        where: { cartaoId: c.id, dataCompra: { gte: start, lte: end } },
+        _sum: { valor: true },
+      });
+      totalFaturaCartoes += Number(sum._sum?.valor ?? 0);
+    }
+
+    // Quanto pode gastar (projeção menos compromisso com faturas)
+    const quantoPodeGastar = Math.max(0, projecaoFechamentoPessoal - totalFaturaCartoes);
+
     return NextResponse.json({
       saldoPessoalAtual,
       lucroArcadeMes,
@@ -98,6 +114,8 @@ export async function GET(request: Request) {
       projecaoFechamentoPessoal,
       status,
       extraNecessario,
+      totalFaturaCartoes,
+      quantoPodeGastar,
       contexto,
       periodo: { inicioMes, fimMes, diasNoMes, diaAtual },
     });
