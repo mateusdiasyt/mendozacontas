@@ -108,6 +108,7 @@ export default function DashboardPage() {
         token={token}
         onLogout={() => {
           localStorage.removeItem("mendozacontas_token");
+          localStorage.removeItem("mendozacontas_user");
           setToken(null);
           setData(defaultData);
         }}

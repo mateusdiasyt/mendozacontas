@@ -123,7 +123,7 @@ export default function CartaoDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <AppHeader token={token} onLogout={() => { localStorage.removeItem("mendozacontas_token"); setToken(null); }} />
+        <AppHeader token={token} onLogout={() => { localStorage.removeItem("mendozacontas_token"); localStorage.removeItem("mendozacontas_user"); setToken(null); }} />
         <main className="mx-auto max-w-6xl px-4 py-8">
           <div className="h-48 animate-pulse rounded-xl bg-slate-200" />
         </main>
@@ -134,7 +134,7 @@ export default function CartaoDetailPage() {
   if (!cartao) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <AppHeader token={token} onLogout={() => { localStorage.removeItem("mendozacontas_token"); setToken(null); }} />
+        <AppHeader token={token} onLogout={() => { localStorage.removeItem("mendozacontas_token"); localStorage.removeItem("mendozacontas_user"); setToken(null); }} />
         <main className="mx-auto max-w-6xl px-4 py-8">
           <p className="text-slate-600">Cartão não encontrado.</p>
           <Link href="/cartoes" className="mt-2 inline-block text-violet-600 hover:underline">
@@ -147,7 +147,7 @@ export default function CartaoDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <AppHeader token={token} onLogout={() => { localStorage.removeItem("mendozacontas_token"); setToken(null); }} />
+      <AppHeader token={token} onLogout={() => { localStorage.removeItem("mendozacontas_token"); localStorage.removeItem("mendozacontas_user"); setToken(null); }} />
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>

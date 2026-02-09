@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     const token = await createToken(user.id, user.email);
     return NextResponse.json({
       token,
-      user: { id: user.id, email: user.email, nome: user.nome },
+      user: { id: user.id, email: user.email, nome: user.nome, isAdmin: user.isAdmin },
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);

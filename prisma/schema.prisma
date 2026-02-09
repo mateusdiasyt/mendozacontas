@@ -37,6 +37,7 @@ model User {
   email        String    @unique
   passwordHash String
   nome         String?
+  isAdmin      Boolean   @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -146,4 +147,14 @@ model Repasse {
   updatedAt DateTime @updatedAt
 
   @@index([userId, data])
+}
+
+// ========== CONFIGURAÇÕES (admin) ==========
+// Chaves de API e outras configs; só editável por admin.
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
 }

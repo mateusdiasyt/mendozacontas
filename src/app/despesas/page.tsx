@@ -121,6 +121,7 @@ export default function DespesasPage() {
         token={token}
         onLogout={() => {
           localStorage.removeItem("mendozacontas_token");
+          localStorage.removeItem("mendozacontas_user");
           setToken(null);
         }}
       />

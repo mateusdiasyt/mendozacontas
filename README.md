@@ -66,6 +66,18 @@ Dados nunca se misturam. Dinheiro do Arcade só vira pessoal via **Repasse** (ge
    npx prisma migrate deploy
    ```
 
+## Painel Admin
+
+Usuários com **admin** podem acessar `/admin` para configurar chaves de API (ex.: Google Gemini, para o futuro chat com IA).
+
+**Como tornar alguém admin:** no banco (Neon SQL Editor ou Prisma Studio), defina `isAdmin = true` para o usuário:
+
+```sql
+UPDATE "User" SET "isAdmin" = true WHERE email = 'seu@email.com';
+```
+
+Faça isso para cada conta que deve ter acesso ao Admin (ex.: a sua e da sua esposa).
+
 ## Estrutura do projeto
 
 - `prisma/schema.prisma` – modelos (User, Receita, Despesa, Cartao, LancamentoCartao, Repasse) e enums (Contexto, TipoReceita, FormaPagamento)
@@ -73,6 +85,8 @@ Dados nunca se misturam. Dinheiro do Arcade só vira pessoal via **Repasse** (ge
 - `src/app/api/dashboard/` – resumo financeiro (requer auth)
 - `src/app/dashboard/` – dashboard com cards (saldo pessoal, lucro Arcade, projeção, status, extra necessário)
 - `src/app/login` e `src/app/register` – telas de autenticação
+- `src/app/admin` – painel admin (chave Gemini etc.; só usuários com `isAdmin`)
+- `src/app/api/admin/settings` – GET/PUT configurações (Gemini API key)
 - `src/lib/` – db (Prisma client), auth (JWT/bcrypt), contexto, format
 
 ## Decisões técnicas

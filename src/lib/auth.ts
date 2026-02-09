@@ -49,6 +49,6 @@ export async function getUserFromToken(token: string | null) {
   if (!payload) return null;
   return prisma.user.findUnique({
     where: { id: payload.sub },
-    select: { id: true, email: true, nome: true },
+    select: { id: true, email: true, nome: true, isAdmin: true },
   });
 }

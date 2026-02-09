@@ -30,6 +30,9 @@ export default function RegisterPage() {
       }
       if (data.token) {
         localStorage.setItem("mendozacontas_token", data.token);
+        if (data.user) {
+          localStorage.setItem("mendozacontas_user", JSON.stringify(data.user));
+        }
         router.push("/dashboard");
         router.refresh();
       }

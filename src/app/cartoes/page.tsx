@@ -106,7 +106,7 @@ export default function CartoesPage() {
 
   return (
     <div className="min-h-screen bg-surface-app">
-      <AppHeader token={token} onLogout={() => { localStorage.removeItem("mendozacontas_token"); setToken(null); }} />
+      <AppHeader token={token} onLogout={() => { localStorage.removeItem("mendozacontas_token"); localStorage.removeItem("mendozacontas_user"); setToken(null); }} />
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-8 flex items-center gap-3">
           <Link href="/dashboard" className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-100 shadow-card bg-white text-slate-600 shadow-sm hover:bg-slate-50">
