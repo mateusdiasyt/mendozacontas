@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { formatCurrency } from "@/lib/format";
 import Link from "next/link";
+import { CreditCard, ArrowLeft } from "lucide-react";
 
 type CartaoItem = {
   id: string;
@@ -89,7 +90,7 @@ export default function CartoesPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-surface-app">
         <AppHeader token={null} />
         <main className="mx-auto max-w-6xl px-4 py-8">
           <p className="text-slate-600">
@@ -104,18 +105,24 @@ export default function CartoesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-surface-app">
       <AppHeader token={token} onLogout={() => { localStorage.removeItem("mendozacontas_token"); setToken(null); }} />
       <main className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-slate-800">Cartões de crédito</h1>
-          <Link href="/dashboard" className="text-sm text-slate-600 hover:underline">
-            ← Voltar ao dashboard
+        <div className="mb-8 flex items-center gap-3">
+          <Link href="/dashboard" className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-100 shadow-card bg-white text-slate-600 shadow-sm hover:bg-slate-50">
+            <ArrowLeft className="h-4 w-4" />
           </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Cartões de crédito</h1>
+            <p className="text-sm text-slate-500">Faturas e compras</p>
+          </div>
         </div>
 
-        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-sm font-medium text-slate-700">Novo cartão</h2>
+        <div className="mb-8 rounded-2xl border border-slate-100 bg-white p-6 shadow-card">
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <CreditCard className="h-4 w-4" />
+            Novo cartão
+          </h2>
           {error && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               {error}
@@ -181,7 +188,7 @@ export default function CartoesPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-lg bg-violet-600 px-4 py-2 font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-violet-500 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-violet-600 px-4 py-2 font-medium text-white hover:bg-violet-700 disabled:opacity-50"
               >
                 {saving ? "Salvando…" : "Adicionar cartão"}
               </button>
@@ -193,7 +200,7 @@ export default function CartoesPage() {
         {loading ? (
           <div className="h-24 animate-pulse rounded-xl bg-slate-200" />
         ) : list.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-500">
+          <p className="rounded-2xl border border-slate-100 shadow-card bg-white p-6 text-slate-500">
             Nenhum cartão cadastrado. Use o formulário acima para adicionar.
           </p>
         ) : (
@@ -202,7 +209,7 @@ export default function CartoesPage() {
               <Link
                 key={c.id}
                 href={`/cartoes/${c.id}`}
-                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-violet-200 hover:shadow"
+                className="rounded-2xl border border-slate-100 shadow-card bg-white p-5 shadow-sm transition hover:border-violet-200 hover:shadow"
               >
                 <p className="font-medium text-slate-800">{c.nome}</p>
                 <p className="mt-1 text-sm text-slate-600">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { formatCurrency } from "@/lib/format";
 import Link from "next/link";
+import { TrendingUp, ArrowLeft, Plus, FileText } from "lucide-react";
 
 type ReceitaItem = {
   id: string;
@@ -98,11 +99,11 @@ export default function ReceitasPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-surface-app">
         <AppHeader token={null} />
         <main className="mx-auto max-w-6xl px-4 py-8">
           <p className="text-slate-600">
-            <Link href="/login" className="font-medium text-slate-800 underline">
+            <Link href="/login" className="font-medium text-[var(--primary)] underline">
               Faça login
             </Link>{" "}
             para cadastrar receitas.
@@ -113,7 +114,7 @@ export default function ReceitasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-surface-app">
       <AppHeader
         token={token}
         onLogout={() => {
@@ -122,57 +123,68 @@ export default function ReceitasPage() {
         }}
       />
       <main className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-slate-800">Receitas</h1>
-          <Link href="/dashboard" className="text-sm text-slate-600 hover:underline">
-            ← Voltar ao dashboard
-          </Link>
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Receitas</h1>
+              <p className="text-sm text-slate-500">Entradas de dinheiro</p>
+            </div>
+          </div>
         </div>
 
-        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-sm font-medium text-slate-700">Nova receita</h2>
+        <div className="mb-8 rounded-2xl border border-slate-100 bg-white p-6 shadow-card">
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <TrendingUp className="h-4 w-4" />
+            Nova receita
+          </h2>
           {error && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               {error}
             </div>
           )}
           <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className="block text-sm text-slate-600">Descrição *</label>
+              <label className="block text-sm font-medium text-slate-700">Descrição *</label>
               <input
                 type="text"
                 value={form.descricao}
                 onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-600">Valor (R$) *</label>
+              <label className="block text-sm font-medium text-slate-700">Valor (R$) *</label>
               <input
                 type="text"
                 inputMode="decimal"
                 value={form.valor}
                 onChange={(e) => setForm({ ...form, valor: e.target.value })}
                 placeholder="0,00"
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-600">Data *</label>
+              <label className="block text-sm font-medium text-slate-700">Data *</label>
               <input
                 type="date"
                 value={form.data}
                 onChange={(e) => setForm({ ...form, data: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-600">Tipo</label>
+              <label className="block text-sm font-medium text-slate-700">Tipo</label>
               <select
                 value={form.tipo}
                 onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
               >
                 {TIPOS.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -182,65 +194,69 @@ export default function ReceitasPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-slate-600">Contexto</label>
+              <label className="block text-sm font-medium text-slate-700">Contexto</label>
               <select
                 value={form.contexto}
                 onChange={(e) => setForm({ ...form, contexto: e.target.value as "PESSOAL" | "ARCADE" })}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
               >
                 <option value="PESSOAL">Pessoal</option>
                 <option value="ARCADE">Arcade</option>
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm text-slate-600">Observação</label>
+              <label className="block text-sm font-medium text-slate-700">Observação</label>
               <input
                 type="text"
                 value={form.observacao}
                 onChange={(e) => setForm({ ...form, observacao: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
               />
             </div>
             <div className="flex items-end">
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-emerald-600 disabled:opacity-50"
               >
+                <Plus className="h-4 w-4" />
                 {saving ? "Salvando…" : "Adicionar receita"}
               </button>
             </div>
           </form>
         </div>
 
-        <h2 className="mb-3 text-sm font-medium text-slate-700">Últimas receitas</h2>
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <FileText className="h-4 w-4" />
+          Últimas receitas
+        </h2>
         {loading ? (
-          <div className="h-32 animate-pulse rounded-xl bg-slate-200" />
+          <div className="h-32 animate-pulse rounded-2xl bg-slate-200/60" />
         ) : list.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-500">
+          <p className="rounded-2xl border border-slate-100 bg-white p-8 text-center text-slate-500 shadow-card">
             Nenhuma receita cadastrada. Use o formulário acima para adicionar.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-card">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50">
+              <thead className="border-b border-slate-100 bg-slate-50/80">
                 <tr>
-                  <th className="p-3 font-medium">Data</th>
-                  <th className="p-3 font-medium">Descrição</th>
-                  <th className="p-3 font-medium">Tipo</th>
-                  <th className="p-3 font-medium">Contexto</th>
-                  <th className="p-3 font-medium text-right">Valor</th>
+                  <th className="p-4 font-medium text-slate-600">Data</th>
+                  <th className="p-4 font-medium text-slate-600">Descrição</th>
+                  <th className="p-4 font-medium text-slate-600">Tipo</th>
+                  <th className="p-4 font-medium text-slate-600">Contexto</th>
+                  <th className="p-4 text-right font-medium text-slate-600">Valor</th>
                 </tr>
               </thead>
               <tbody>
                 {list.map((r) => (
-                  <tr key={r.id} className="border-b border-slate-100 last:border-0">
-                    <td className="p-3 text-slate-600">{r.data}</td>
-                    <td className="p-3">{r.descricao}</td>
-                    <td className="p-3 text-slate-600">{r.tipo}</td>
-                    <td className="p-3 text-slate-600">{r.contexto}</td>
-                    <td className="p-3 text-right font-medium text-emerald-700">
-                      {formatCurrency(r.valor)}
+                  <tr key={r.id} className="border-b border-slate-50 transition hover:bg-slate-50/50 last:border-0">
+                    <td className="p-4 text-slate-600">{r.data}</td>
+                    <td className="p-4 font-medium text-slate-900">{r.descricao}</td>
+                    <td className="p-4 text-slate-600">{r.tipo}</td>
+                    <td className="p-4 text-slate-600">{r.contexto}</td>
+                    <td className="p-4 text-right font-semibold text-emerald-600">
+                      +{formatCurrency(r.valor)}
                     </td>
                   </tr>
                 ))}

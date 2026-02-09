@@ -9,8 +9,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        primary: {
+          DEFAULT: "var(--primary)",
+          hover: "var(--primary-hover)",
+          light: "var(--primary-light)",
+          dark: "var(--primary-dark)",
+        },
+        surface: {
+          app: "var(--bg-app)",
+          card: "var(--bg-card)",
+        },
+      },
+      fontFamily: {
+        sans: ["var(--font-jakarta)", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        card: "var(--shadow)",
+        "card-hover": "var(--shadow-lg)",
+        glow: "var(--shadow-glow)",
       },
     },
   },

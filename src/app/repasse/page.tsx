@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { formatCurrency } from "@/lib/format";
 import Link from "next/link";
+import { ArrowLeftRight } from "lucide-react";
 
 type RepasseItem = { id: string; valor: number; data: string };
 
@@ -72,7 +73,7 @@ export default function RepassePage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-surface-app">
         <AppHeader token={null} />
         <main className="mx-auto max-w-6xl px-4 py-8">
           <p className="text-slate-600">
@@ -87,7 +88,7 @@ export default function RepassePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-surface-app">
       <AppHeader
         token={token}
         onLogout={() => {
@@ -112,8 +113,11 @@ export default function RepassePage() {
           </p>
         </div>
 
-        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-sm font-medium text-slate-700">Fazer repasse</h2>
+        <div className="mb-8 rounded-2xl border border-slate-100 bg-white p-6 shadow-card">
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <ArrowLeftRight className="h-4 w-4" />
+            Fazer repasse
+          </h2>
           {error && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               {error}
@@ -143,7 +147,7 @@ export default function RepassePage() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 font-medium text-white shadow-sm hover:bg-amber-600 disabled:opacity-50"
             >
               {saving ? "Processando…" : "Realizar repasse"}
             </button>
@@ -154,11 +158,11 @@ export default function RepassePage() {
         {loading ? (
           <div className="h-24 animate-pulse rounded-xl bg-slate-200" />
         ) : list.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-500">
+          <p className="rounded-2xl border border-slate-100 shadow-card bg-white p-6 text-slate-500">
             Nenhum repasse registrado ainda.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-slate-100 shadow-card bg-white shadow-sm">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>

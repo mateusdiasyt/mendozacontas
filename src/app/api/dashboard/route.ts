@@ -106,6 +106,50 @@ export async function GET(request: Request) {
     // Quanto pode gastar (projeção menos compromisso com faturas)
     const quantoPodeGastar = Math.max(0, projecaoFechamentoPessoal - totalFaturaCartoes);
 
+    // Dados para gráficos: receitas e despesas por dia (mês atual PESSOAL)
+    const [receitasList, despesasList] = await Promise.all([
+      prisma.receita.findMany({
+        where: { userId: user.id, contexto: "PESSOAL", data: { gte: inicioMes, lte: fimMes } },
+        select: { data: true, valor: true },
+      }),
+      prisma.despesa.findMany({
+        where: { userId: user.id, contexto: "PESSOAL", data: { gte: inicioMes, lte: fimMes } },
+        select: { data: true, valor: true, categoria: true },
+      }),
+    ]);
+
+    const receitasPorDia: Record<string, number> = {};
+    const despesasPorDia: Record<string, number> = {};
+    const despesasPorCategoria: Record<string, number> = {};
+    for (let d = 1; d <= diasNoMes; d++) {
+      const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      receitasPorDia[key] = 0;
+      despesasPorDia[key] = 0;
+    }
+    for (const r of receitasList) {
+      const key = r.data.toISOString().slice(0, 10);
+      if (receitasPorDia[key] != null) receitasPorDia[key] += Number(r.valor);
+    }
+    for (const d of despesasList) {
+      const key = d.data.toISOString().slice(0, 10);
+      if (despesasPorDia[key] != null) despesasPorDia[key] += Number(d.valor);
+      despesasPorCategoria[d.categoria] = (despesasPorCategoria[d.categoria] ?? 0) + Number(d.valor);
+    }
+
+    const fluxoPorDia = Object.entries(receitasPorDia)
+      .map(([date, receita]) => ({
+        date,
+        receita,
+        despesa: despesasPorDia[date] ?? 0,
+        saldo: (receitasPorDia[date] ?? 0) - (despesasPorDia[date] ?? 0),
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const categoriasChart = Object.entries(despesasPorCategoria).map(([name, value]) => ({
+      name: name || "Outros",
+      value: Math.round(value * 100) / 100,
+    }));
+
     return NextResponse.json({
       saldoPessoalAtual,
       lucroArcadeMes,
@@ -118,6 +162,7 @@ export async function GET(request: Request) {
       quantoPodeGastar,
       contexto,
       periodo: { inicioMes, fimMes, diasNoMes, diaAtual },
+      chart: { fluxoPorDia, categoriasChart },
     });
   } catch (e) {
     console.error("Dashboard error:", e);
